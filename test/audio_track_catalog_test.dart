@@ -7,8 +7,11 @@ void main() {
   group('AudioTrackCatalog', () {
     test('returns explicit overrides for special nodes', () {
       expect(AudioTrackCatalog.trackForNode('quinto_landing'), 'siciliano');
-      expect(AudioTrackCatalog.trackForNode('finale_acceptance'), 'aria_goldberg');
+      expect(
+          AudioTrackCatalog.trackForNode('finale_acceptance'), 'aria_goldberg');
       expect(AudioTrackCatalog.trackForNode('finale_oblivion'), 'silence');
+      expect(
+          AudioTrackCatalog.trackForNode('preview_epilogue'), 'aria_goldberg');
       expect(AudioTrackCatalog.trackForNode('la_zona'), 'zona');
     });
 
@@ -29,6 +32,21 @@ void main() {
         'assets/audio/bach_siciliano_bwv1017.ogg',
       );
       expect(AudioTrackCatalog.assetForKey('silence'), isNull);
+      expect(
+        AudioTrackCatalog.assetForKey('title_soglia'),
+        'assets/audio/bach_aria_goldberg.ogg',
+      );
+    });
+
+    test('keeps ambient beds available for gameplay sectors', () {
+      expect(AudioTrackCatalog.ambientKeyForSector('soglia'), 'ambient_soglia');
+      expect(AudioTrackCatalog.ambientKeyForSector('giardino'),
+          'ambient_giardino');
+      expect(AudioTrackCatalog.ambientKeyForSector('osservatorio'),
+          'ambient_osservatorio');
+      expect(AudioTrackCatalog.ambientKeyForSector('galleria'),
+          'universal_ambient');
+      expect(AudioTrackCatalog.ambientKeyForSector('memoria'), isNull);
     });
 
     test('exposes per-track mix bias only for calibrated outliers', () {
@@ -39,19 +57,37 @@ void main() {
       expect(AudioTrackCatalog.mixVolumeBiasForKey('nonexistent_track'), 0.0);
     });
 
+    test('exposes node-specific mix nudges for cinematic rooms', () {
+      expect(AudioTrackCatalog.mixVolumeBiasForNode('garden_fountain'), 0.04);
+      expect(AudioTrackCatalog.mixVolumeBiasForNode('gallery_central'), 0.04);
+      expect(AudioTrackCatalog.mixVolumeBiasForNode('preview_epilogue'), 0.05);
+      expect(AudioTrackCatalog.mixVolumeBiasForNode('unknown_node'), 0.0);
+      expect(AudioTrackCatalog.mixVolumeBiasForNode(null), 0.0);
+    });
+
     test('maps representative nodes to expected sectors', () {
       expect(AudioTrackCatalog.sectorForNode('intro_void'), 'soglia');
+      expect(AudioTrackCatalog.sectorForNode('preview_epilogue'), 'soglia');
       expect(AudioTrackCatalog.sectorForNode('gallery_light'), 'galleria');
-      expect(AudioTrackCatalog.sectorForNode('quinto_ritual_chamber'), 'memoria');
+      expect(
+          AudioTrackCatalog.sectorForNode('quinto_ritual_chamber'), 'memoria');
       expect(AudioTrackCatalog.sectorForNode('finale_oblivion'), 'memoria');
       expect(AudioTrackCatalog.sectorForNode('unknown_node'), 'soglia');
     });
 
-    test('keeps audio and background sector families aligned for representative nodes', () {
+    test(
+        'keeps audio and background sector families aligned for representative nodes',
+        () {
       expect(AudioTrackCatalog.sectorForNode('garden_fountain'), 'giardino');
       expect(
         BackgroundService.getBackgroundForNode('garden_fountain'),
         'assets/images/bg_giardino.jpg',
+      );
+
+      expect(AudioTrackCatalog.sectorForNode('preview_epilogue'), 'soglia');
+      expect(
+        BackgroundService.getBackgroundForNode('preview_epilogue'),
+        'assets/images/bg_soglia.jpg',
       );
 
       expect(AudioTrackCatalog.sectorForNode('quinto_landing'), 'memoria');

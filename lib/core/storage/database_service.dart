@@ -2,7 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class DatabaseService {
-  static const _databaseName = "oblivion_archive.db";
+  static const _databaseName = "oblivion_preview_archive.db";
   static const _databaseVersion = 9;
   static const int defaultLucidity = 50;
   static const int defaultOblivionLevel = 0;

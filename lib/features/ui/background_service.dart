@@ -53,7 +53,11 @@ class BackgroundService {
   }
 
   static String _sectorForNode(String nodeId) {
-    if (nodeId == 'intro_void' || nodeId == 'la_soglia') return 'soglia';
+    if (nodeId == 'intro_void' ||
+        nodeId == 'la_soglia' ||
+        nodeId == 'preview_epilogue') {
+      return 'soglia';
+    }
     if (nodeId.startsWith('garden')) return 'giardino';
     if (nodeId.startsWith('obs_')) return 'osservatorio';
     if (nodeId.startsWith('gal_') || nodeId.startsWith('gallery_')) {

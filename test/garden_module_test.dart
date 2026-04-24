@@ -32,28 +32,20 @@ void main() {
       expect(arrival!.newNode, 'garden_portico');
       expect(arrival.completePuzzle, GardenModule.arrivalPuzzle);
       expect(arrival.revealMode, TextRevealMode.slow);
-      expect(arrival.narrativeText, contains('does not welcome you with beauty first'));
+      expect(arrival.narrativeText,
+          contains('does not welcome you with beauty first'));
     });
   });
 
   group('Garden leaf arrangements', () {
     const preparedPuzzles = {'garden_columns_read', 'garden_leaves_read'};
 
-    test('distinguishes unprepared, alternative, and correct orders', () {
+    test('requires reading first, then accepts the simple arrange command', () {
       final unprepared = GardenModule.handleArrange(
         cmd: const ParsedCommand(
           verb: CommandVerb.arrange,
-          args: [
-            'prudence',
-            'friendship',
-            'pleasure',
-            'simplicity',
-            'absence',
-            'tranquillity',
-            'memory'
-          ],
-          rawInput:
-              'arrange leaves prudence friendship pleasure simplicity absence tranquillity memory',
+          args: ['leaves'],
+          rawInput: 'arrange leaves',
         ),
         state: _state(nodeId: 'garden_cypress'),
       );
@@ -61,47 +53,30 @@ void main() {
       expect(unprepared!.narrativeText, contains('Read both before arranging'));
       expect(unprepared.completePuzzle, isNull);
 
-      final alternative = GardenModule.handleArrange(
-        cmd: const ParsedCommand(
-          verb: CommandVerb.arrange,
-          args: [
-            'friendship',
-            'prudence',
-            'pleasure',
-            'simplicity',
-            'absence',
-            'tranquillity',
-            'memory'
-          ],
-          rawInput:
-              'arrange leaves friendship prudence pleasure simplicity absence tranquillity memory',
-        ),
-        state: _state(nodeId: 'garden_cypress', puzzles: preparedPuzzles),
-      );
-      expect(alternative, isNotNull);
-      expect(
-          alternative!.narrativeText, contains('coherent, almost persuasive'));
-      expect(alternative.completePuzzle, isNull);
-
       final correct = GardenModule.handleArrange(
         cmd: const ParsedCommand(
           verb: CommandVerb.arrange,
-          args: [
-            'prudence',
-            'friendship',
-            'pleasure',
-            'simplicity',
-            'absence',
-            'tranquillity',
-            'memory'
-          ],
-          rawInput:
-              'arrange leaves prudence friendship pleasure simplicity absence tranquillity memory',
+          args: ['leaves'],
+          rawInput: 'arrange leaves',
         ),
         state: _state(nodeId: 'garden_cypress', puzzles: preparedPuzzles),
       );
       expect(correct, isNotNull);
       expect(correct!.completePuzzle, 'leaves_arranged');
+    });
+
+    test('rejects arranging the wrong thing', () {
+      final wrongTarget = GardenModule.handleArrange(
+        cmd: const ParsedCommand(
+          verb: CommandVerb.arrange,
+          args: ['columns'],
+          rawInput: 'arrange columns',
+        ),
+        state: _state(nodeId: 'garden_cypress', puzzles: preparedPuzzles),
+      );
+      expect(wrongTarget, isNotNull);
+      expect(wrongTarget!.completePuzzle, isNull);
+      expect(wrongTarget.narrativeText, contains('Try: arrange leaves'));
     });
   });
 
@@ -149,14 +124,14 @@ void main() {
       final generic = GardenModule.handleWrite(
         cmd: const ParsedCommand(
           verb: CommandVerb.write,
-          args: ['friendship'],
-          rawInput: 'write friendship',
+          args: ['peace'],
+          rawInput: 'write peace',
         ),
         state: _state(nodeId: 'garden_stelae'),
       );
       expect(generic, isNotNull);
       expect(generic!.completePuzzle, isNull);
-      expect(generic.narrativeText, contains('rejects slogans'));
+      expect(generic.narrativeText, contains('Try: inscribe friendship'));
 
       final substantial = GardenModule.handleWrite(
         cmd: const ParsedCommand(
@@ -184,6 +159,64 @@ void main() {
       expect(substantial, isNotNull);
       expect(substantial!.completePuzzle, 'stele_inscribed');
     });
+
+    test('accepts the simple inscribe friendship command', () {
+      final simple = GardenModule.handleWrite(
+        cmd: const ParsedCommand(
+          verb: CommandVerb.write,
+          args: ['friendship'],
+          rawInput: 'inscribe friendship',
+        ),
+        state: _state(nodeId: 'garden_stelae'),
+      );
+      expect(simple, isNotNull);
+      expect(simple!.completePuzzle, 'stele_inscribed');
+      expect(simple.narrativeText, contains('You inscribe only one word'));
+    });
+
+    test(
+        'accepts a concrete line about a friend without the exact word friendship',
+        () {
+      final substantial = GardenModule.handleWrite(
+        cmd: const ParsedCommand(
+          verb: CommandVerb.write,
+          args: [
+            'a',
+            'friend',
+            'asked',
+            'me',
+            'to',
+            'return',
+            'to',
+            'that',
+            'winter',
+            'street',
+            'and',
+            'apologize',
+            'by',
+            'name'
+          ],
+          rawInput:
+              'write a friend asked me to return to that winter street and apologize by name',
+        ),
+        state: _state(nodeId: 'garden_stelae'),
+      );
+      expect(substantial, isNotNull);
+      expect(substantial!.completePuzzle, 'stele_inscribed');
+    });
+
+    test('still accepts a short concrete friendship line', () {
+      final substantial = GardenModule.handleWrite(
+        cmd: const ParsedCommand(
+          verb: CommandVerb.write,
+          args: ['friendship', 'cost', 'me', 'pride'],
+          rawInput: 'write friendship cost me pride',
+        ),
+        state: _state(nodeId: 'garden_stelae'),
+      );
+      expect(substantial, isNotNull);
+      expect(substantial!.completePuzzle, 'stele_inscribed');
+    });
   });
 
   group('Garden statue relinquishment', () {
@@ -192,7 +225,7 @@ void main() {
         state: _state(
           nodeId: 'garden_grove',
           puzzles: const {'alcove_pleasures_walked', 'alcove_pains_walked'},
-          inventory: const ['notebook', 'coin'],
+          inventory: const ['coin', 'book'],
         ),
       );
       expect(blocked, isNotNull);
@@ -206,7 +239,7 @@ void main() {
         state: _state(
           nodeId: 'garden_grove',
           puzzles: const {'alcove_pleasures_walked', 'alcove_pains_walked'},
-          inventory: const ['notebook', 'coin', 'mirror shard'],
+          inventory: const ['coin', 'book', 'mirror shard'],
         ),
       );
       expect(success, isNotNull);
@@ -217,6 +250,28 @@ void main() {
       expect(success.revealMode, TextRevealMode.wordByWord);
       expect(success.preDisplayPause, const Duration(seconds: 3));
       expect(success.narrativeText, contains('the grove asks nothing of you'));
+      expect(success.narrativeText, contains('public preview ends'));
+      expect(success.newNode, 'preview_epilogue');
+    });
+
+    test('accepts offer relics as the final ritual command', () {
+      final success = GardenModule.handleOffer(
+        cmd: const ParsedCommand(
+          verb: CommandVerb.offer,
+          args: ['relics'],
+          rawInput: 'offer relics',
+        ),
+        state: _state(
+          nodeId: 'garden_grove',
+          puzzles: const {'alcove_pleasures_walked', 'alcove_pains_walked'},
+          inventory: const ['coin', 'book', 'mirror shard'],
+        ),
+      );
+
+      expect(success, isNotNull);
+      expect(success!.completePuzzle, 'garden_complete');
+      expect(success.narrativeText, contains('offer the relics'));
+      expect(success.grantItem, 'ataraxia');
     });
 
     test('offer feedback makes the remaining relinquishments legible', () {
@@ -252,6 +307,49 @@ void main() {
       expect(secondOffer, isNotNull);
       expect(secondOffer!.completePuzzle, 'garden_offer_pain');
       expect(secondOffer.narrativeText, contains('One relinquishment remains'));
+    });
+
+    test('asks for alcove-specific actions instead of generic walking', () {
+      final pleasuresWalk = GardenModule.handleWalk(
+        cmd: const ParsedCommand(
+          verb: CommandVerb.walk,
+          args: ['through'],
+          rawInput: 'walk through',
+        ),
+        state: _state(
+          nodeId: 'garden_alcove_pleasures',
+        ),
+      );
+      expect(pleasuresWalk, isNotNull);
+      expect(pleasuresWalk!.completePuzzle, isNull);
+      expect(pleasuresWalk.narrativeText, contains('Try: smell linden'));
+
+      final painsWalk = GardenModule.handleWalk(
+        cmd: const ParsedCommand(
+          verb: CommandVerb.walk,
+          args: ['through'],
+          rawInput: 'walk through',
+        ),
+        state: _state(
+          nodeId: 'garden_alcove_pains',
+        ),
+      );
+      expect(painsWalk, isNotNull);
+      expect(painsWalk!.completePuzzle, isNull);
+      expect(painsWalk.narrativeText, contains('Try: examine mirror shard'));
+    });
+
+    test('pain alcove resolves by facing the shard without taking it', () {
+      final resolved = GardenModule.handleExamine(
+        nodeId: 'garden_alcove_pains',
+        target: 'mirror shard',
+        state: _state(nodeId: 'garden_alcove_pains'),
+      );
+
+      expect(resolved, isNotNull);
+      expect(resolved!.completePuzzle, 'alcove_pains_walked');
+      expect(
+          resolved.narrativeText, contains('You leave the shard where it is'));
     });
   });
 

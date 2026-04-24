@@ -47,6 +47,8 @@ const Set<String> _simulacraNames = {
   'the catalyst',
 };
 
+const bool _previewBuild = true;
+
 const Set<String> simulacraItemNames = _simulacraNames;
 
 enum BossUtteranceKind { surrender, remain, resolution, other }
@@ -110,6 +112,7 @@ const Map<String, NodeDef> _nodes = {
         'cobalt blue to the east, golden to the south, violet to the west. '
         'At the centre, a pentagonal pedestal holds five recesses — each '
         'shaped for something you have not yet found.\n\n'
+        'Only the amber door feels awake. The others keep their silence.\n\n'
         'A clock without hands marks time in no direction you recognise.',
     exits: {
       'north': 'garden_portico',
@@ -124,11 +127,33 @@ const Map<String, NodeDef> _nodes = {
       'clock': 'Numerals run counterclockwise. The hands are absent.',
       'north door':
           'Amber, warm, slightly ajar. Beyond it: the scent of earth.',
-      'east door': 'Cobalt blue, cold. A faint hum behind the glass.',
+      'east door':
+          'Cobalt blue, cold. Something waits there, but not for this descent.',
       'south door':
-          'Golden, polished to a mirror. Your reflection is slightly wrong.',
-      'west door': 'Violet, heavy. The grain of the wood runs upward.',
-      'door': 'Four doors. The amber one to the north is ajar.',
+          'Golden, polished to a mirror. It remains dark, withholding itself.',
+      'west door':
+          'Violet, heavy. The wood keeps its breath and does not answer.',
+      'door':
+          'Four doors, but only the amber one to the north is answering tonight.',
+    },
+  ),
+
+  'preview_epilogue': NodeDef(
+    title: 'Preview Complete',
+    description:
+        'The Threshold holds still around the empty sphere in your hand.\n\n'
+        'This is the end of the public preview of Archive of Oblivion.\n\n'
+        'If this chamber stayed with you, leave a comment on the itch.io page.\n'
+        'Tell us what asked for more: the atmosphere, the writing, the sound, the puzzles, or simply the desire to go deeper.\n\n'
+        'If you want the full release, say so clearly. That interest matters.\n\n'
+        'Thank you for reaching the end of this first threshold.',
+    exits: {},
+    examines: {
+      'sphere':
+          'Perfectly empty. It reflects nothing back except the fact that you carried yourself here.',
+      'threshold': 'The room is quieter now. Not finished. Waiting.',
+      'preview':
+          'A first descent only. Enough, perhaps, to know whether the Archive should continue opening.',
     },
   ),
 
@@ -557,7 +582,8 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     required EngineResponse response,
     required FeedbackKind feedbackKind,
   }) {
-    if (response.preDisplayPause != Duration.zero) return response.preDisplayPause;
+    if (response.preDisplayPause != Duration.zero)
+      return response.preDisplayPause;
     switch (feedbackKind) {
       case FeedbackKind.solvedPuzzle:
         return const Duration(milliseconds: 500);
@@ -858,14 +884,29 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
 
       // ── Display ─────────────────────────────────────────────────────────────
       final demiurgeNodeId = response.newNode ?? currentNodeId;
+      final isProductiveResponse = _isProductiveOutcome(response);
+      final shouldAttachCulturalReflection = _shouldAttachCulturalReflection(
+        cmd: cmd,
+        response: response,
+        nodeId: demiurgeNodeId,
+      );
       final throttleMetaNarration = _shouldThrottleMetaNarration(
         response: response,
         nodeId: demiurgeNodeId,
       );
-      final narrativeText = response.needsDemiurge && !throttleMetaNarration
-          ? _callNarrator(
-              cmd.verb, response.narrativeText, demiurgeNodeId, trimmed)
-          : response.narrativeText;
+      final narrativeText = shouldAttachCulturalReflection
+          ? _composeMissWithCulturalReflection(
+              cmd: cmd,
+              authoredText: response.narrativeText,
+              nodeId: demiurgeNodeId,
+              rawInput: trimmed,
+            )
+          : response.needsDemiurge &&
+                  !throttleMetaNarration &&
+                  isProductiveResponse
+              ? _callNarrator(
+                  cmd.verb, response.narrativeText, demiurgeNodeId, trimmed)
+              : response.narrativeText;
       final narrativeWithProgressiveHint = progressiveHintSuffix == null
           ? narrativeText
           : '$narrativeText$progressiveHintSuffix';
@@ -915,7 +956,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
       );
 
       int quoteExposureSeen = withPlayer.quoteExposureSeen;
-      if (response.needsDemiurge) {
+      if (response.needsDemiurge || shouldAttachCulturalReflection) {
         final next =
             (newCounters['quote_exposure_seen'] ?? quoteExposureSeen) + 1;
         newCounters['quote_exposure_seen'] = next;
@@ -963,7 +1004,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
         memoryWasSaved: memoryWasSaved,
         psychoProfileFieldsPresent: psychoProfileFieldsPresent,
       );
-      if (feedbackKind == FeedbackKind.solvedPuzzle) {
+      if (!_previewBuild && feedbackKind == FeedbackKind.solvedPuzzle) {
         // ignore: discarded_futures
         AudioService().handleTrigger('reward_bach_soft');
       }
@@ -1212,6 +1253,13 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     }
     final direction = cmd.args.first;
 
+    if (_previewBuild && nodeId == 'la_soglia') {
+      final previewBlock = _previewThresholdBlock(direction);
+      if (previewBlock != null) {
+        return EngineResponse(narrativeText: previewBlock);
+      }
+    }
+
     // Special: Quinto Settore requires all four simulacra
     if (direction == 'up' && nodeId == 'la_soglia') {
       final hasAll = _simulacraNames.every((n) => s.inventory.contains(n));
@@ -1304,6 +1352,12 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
   }
 
   EngineResponse _handleWait(String nodeId, GameEngineState s) {
+    if (_previewBuild && nodeId == 'preview_epilogue') {
+      return const EngineResponse(
+        narrativeText: 'Nothing more is demanded here.\n\n'
+            'If this brief descent stayed with you, leave a comment on the itch.io page and say whether you want the full release.',
+      );
+    }
     final sectorResponse = _routeSectorCommand(
       cmd: const ParsedCommand(
           verb: CommandVerb.wait, args: [], rawInput: 'wait'),
@@ -1318,6 +1372,12 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
 
   EngineResponse _handleTake(
       ParsedCommand cmd, String nodeId, NodeDef node, GameEngineState s) {
+    if (_previewBuild && nodeId == 'preview_epilogue') {
+      return const EngineResponse(
+        narrativeText:
+            'There is nothing here to take except the wish to continue.',
+      );
+    }
     final sectorResponse = _routeSectorCommand(
       cmd: cmd,
       nodeId: nodeId,
@@ -1412,16 +1472,35 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
 
   EngineResponse _handleSmell(String nodeId) {
     if (nodeId == 'garden_alcove_pleasures') {
+      final engine = state.valueOrNull;
+      final alreadyResolved =
+          engine?.completedPuzzles.contains('alcove_pleasures_walked') ?? false;
+      final burdened = (engine?.psychoWeight ?? 0) > 0;
+      if (alreadyResolved) {
+        return const EngineResponse(
+          narrativeText:
+              'The linden scent has already passed through you once. The alcove is quieter now.',
+        );
+      }
+      if (burdened) {
+        return const EngineResponse(
+          narrativeText:
+              'You breathe in, but what you are still holding turns the sweetness heavy.\n\n'
+              'Set things down first. Pleasure here must be met without grasping.',
+        );
+      }
       return const EngineResponse(
         narrativeText: 'The scent of linden blossom.\n\n'
             'And then — without transition — a room you knew once. '
             'Not this Archive. A door, half-open, and afternoon light through it.\n\n'
             '"The smell and taste remain for a long time, like souls."\n\n'
-            'The smell fades. The room does not.',
+            'The smell fades. The room does not.\n\n'
+            'You let the memory pass without trying to keep it. Something in the alcove releases.',
         needsDemiurge: true,
         lucidityDelta: -5,
         anxietyDelta: 5,
         audioTrigger: 'sfx:proustian_trigger',
+        completePuzzle: 'alcove_pleasures_walked',
       );
     }
     return const EngineResponse(
@@ -1666,6 +1745,12 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
   /// Handles commands not recognised by the parser (contextual raw-input parsing).
   EngineResponse _handleUnknown(
       ParsedCommand cmd, String nodeId, GameEngineState s) {
+    if (_previewBuild && nodeId == 'preview_epilogue') {
+      return const EngineResponse(
+        narrativeText: 'The preview has reached its end.\n\n'
+            'What remains now is your impression of it — and whether this descent should continue.',
+      );
+    }
     final sectorResponse =
         _routeSectorCommand(cmd: cmd, nodeId: nodeId, state: s);
     if (sectorResponse != null) return sectorResponse;
@@ -1725,11 +1810,17 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
 
   String _hintTextForNode(String nodeId, int level, GameEngineState s) {
     switch (nodeId) {
+      case 'garden_stelae':
+        return _selectHint(level, const [
+          'The twelfth stele is not asking for eloquence. It is asking for the missing principle.',
+          'The other maxims are already written. You only need to name what completes them.',
+          'Try: inscribe friendship.',
+        ]);
       case 'garden_grove':
         return _selectHint(level, const [
           'The statue is asking for relinquishment, not acquisition.',
-          'You must pass through pleasure and pain before the statue accepts what you carry.',
-          'Relinquish one useful object, one identity-bound object, and one pain-bound object; then deposit everything at the statue.',
+          'In the alcoves, do one fitting thing without grasping: attend to pleasure, then face pain.',
+          'Try smell linden in the eastern alcove and examine mirror shard in the western one; then relinquish three distinct things and offer relics at the statue.',
         ]);
       case 'gallery_copies':
         return _selectHint(level, const [
@@ -2166,6 +2257,78 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     return text.contains('Hint:') || _hasActionableTail(text);
   }
 
+  bool _shouldAttachCulturalReflection({
+    required ParsedCommand cmd,
+    required EngineResponse response,
+    required String nodeId,
+  }) {
+    if (!_isProgressiveHintEligible(cmd.verb)) return false;
+    if (_isProductiveOutcome(response)) return false;
+    if (nodeId == 'preview_epilogue') return false;
+    return true;
+  }
+
+  String _composeMissWithCulturalReflection({
+    required ParsedCommand cmd,
+    required String authoredText,
+    required String nodeId,
+    required String rawInput,
+  }) {
+    final reflection = _culturalReflectionForAttempt(
+      verb: cmd.verb,
+      nodeId: nodeId,
+      rawInput: rawInput,
+    );
+    if (reflection.trim().isEmpty) return authoredText;
+    return '${authoredText.trimRight()}\n\n$reflection';
+  }
+
+  String _culturalReflectionForAttempt({
+    required CommandVerb verb,
+    required String nodeId,
+    required String rawInput,
+  }) {
+    final sector = DemiurgeService.sectorForNode(nodeId);
+
+    final keywordEcho = EchoService.echoForKeywords(rawInput);
+    if (keywordEcho != null) {
+      final echoText = EchoService.instance.respond(keywordEcho);
+      if (echoText != null) return echoText;
+    }
+
+    final profile = ref.read(psychoProfileProvider).valueOrNull;
+    if (profile != null) {
+      final echo = EchoService.echoForCommand(
+        verb.name,
+        profile.phase,
+        proustAffinity: profile.proustAffinity,
+        tarkovskijAffinity: profile.tarkovskijAffinity,
+        sethAffinity: profile.sethAffinity,
+      );
+      if (echo != null) {
+        final echoText = EchoService.instance.respond(echo);
+        if (echoText != null) return echoText;
+      }
+    }
+
+    if (EchoService.isThematicForSector(rawInput, sector)) {
+      final sectorEchoName = EchoService.sectorEcho[sector];
+      if (sectorEchoName != null) {
+        final echoText = EchoService.instance.respond(sectorEchoName);
+        if (echoText != null) return echoText;
+      }
+    }
+
+    return _callDemiurge(
+      'The Archive keeps even failed gestures.\n\n'
+      '"For the things we have to learn before we can do them, '
+      'we learn by doing them."\n'
+      '— Aristotle\n\n'
+      'The room refuses the command, but not the lesson.',
+      nodeId,
+    );
+  }
+
   bool _shouldDeferPsychoShiftLine({
     required EngineResponse response,
     required String nodeId,
@@ -2562,25 +2725,18 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     final sethDelta = after.sethAffinity - before.sethAffinity;
     final phaseChanged = after.phase > before.phase;
 
-    final fragments = <String>[];
-    if (awarenessDelta > 0) {
-      fragments.add('awareness +$awarenessDelta');
-    }
-    if (proustDelta > 0) {
-      fragments.add('proust resonance +$proustDelta');
-    }
-    if (tarkovskijDelta > 0) {
-      fragments.add('tarkovskij resonance +$tarkovskijDelta');
-    }
-    if (sethDelta > 0) {
-      fragments.add('seth resonance +$sethDelta');
-    }
-
     final phaseLine =
-        phaseChanged ? 'A threshold yields. Phase ${after.phase} opens.' : null;
-    final shiftLine = fragments.isEmpty
+        phaseChanged ? 'A threshold yields. The Archive opens further.' : null;
+    final shiftLine = awarenessDelta <= 0 &&
+            proustDelta <= 0 &&
+            tarkovskijDelta <= 0 &&
+            sethDelta <= 0
         ? null
-        : 'The Archive notes a shift: ${fragments.join(' | ')}.';
+        : _diegeticShiftLine(
+            proustDelta: proustDelta,
+            tarkovskijDelta: tarkovskijDelta,
+            sethDelta: sethDelta,
+          );
 
     if (phaseLine == null && shiftLine == null) {
       return null;
@@ -2596,43 +2752,41 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
       phaseChanged: phaseChanged,
     );
   }
+
+  String _diegeticShiftLine({
+    required int proustDelta,
+    required int tarkovskijDelta,
+    required int sethDelta,
+  }) {
+    if (proustDelta > 0) {
+      return 'The failed gesture is not wasted. Something remembered by the senses stirs.';
+    }
+    if (tarkovskijDelta > 0) {
+      return 'The failed gesture is not wasted. Your attention slows and sharpens.';
+    }
+    if (sethDelta > 0) {
+      return 'The failed gesture is not wasted. The Archive adjusts around your intention.';
+    }
+    return 'The failed gesture is not wasted. Something in you becomes more attentive.';
+  }
 }
 
 // ── Help text ─────────────────────────────────────────────────────────────────
 
 const _helpText = '''Commands:
-  go [north/south/east/west/up/down]   — move
+  go [north/south/east/west]           — move
   examine [object]  /  look            — inspect
   take [object]                        — pick up (increases psychological weight)
   drop [object]                        — set down
-  deposit everything                   — leave all at the statue (Garden finale)
+  offer relics                         — leave all at the statue (Garden finale)
   wait  /  z                           — let time pass
   smell [object]                       — attend to a scent
-  taste [object]                       — attend to a flavour
   hint / hint more / hint full         — layered contextual guidance
-  arrange leaves [order]               — Cypress Avenue puzzle
+  arrange leaves                       — Cypress Avenue puzzle
   walk [mode]      — "walk blindfolded", "walk backward", "walk through"
-  combine [items]                      — Observatory Antechamber puzzle
-  press [target]                       — Gallery Corridor puzzle
-  construct / describe / paint / write [content]   — writing puzzles
-  offer [item/concept]                 — Garden statue or Lab Vestibule puzzle
-  calibrate [x] [y] [z]               — Observatory Calibration puzzle
-  invert [target]                      — Observatory Dome puzzle
-  confirm  /  yes                      — multi-step confirmation
-  break [target]                       — Gallery finale
-  blow                                 — Lab sealed chamber finale
-  set temperature [value]              — Lab Alembic puzzle
-  decipher symbols                     — Lab Substances puzzle
-  collect [substance]                  — Lab Substances puzzle
-  calcinate                            — Lab Furnace puzzle
-  enter [value]                        — Observatory Archive puzzle
-  observe                              — Observatory Dome finale
-  place [simulacrum] in cup            — Fifth Sector ritual
-  stir                                 — Fifth Sector ritual
-  drink                                — Fifth Sector ritual
-  say [words]                          — Maturity room (Fifth Sector)
+  write / inscribe friendship          — blank stele puzzle
+  offer [item]                         — name a category at the statue
   inventory  /  i                      — list what you carry
-  wake up                              — finale epilogue (Acceptance/Testimony)
   help  /  ?                           — this message''';
 
 String gameNodeTitle(String nodeId) => _nodes[nodeId]?.title.isNotEmpty == true
@@ -2643,6 +2797,25 @@ String? gameRequiredPuzzleForExit(String nodeId, String direction) =>
     _exitGates[nodeId]?[direction];
 
 String? gameGateHintForPuzzle(String puzzleId) => _gateHints[puzzleId];
+
+String? _previewThresholdBlock(String direction) {
+  switch (direction) {
+    case 'east':
+      return 'The cobalt door gives back only a colder hum.\n\n'
+          'Not yet. In this preview, the descent belongs to the Garden alone.';
+    case 'south':
+      return 'The golden door reflects you, but does not open.\n\n'
+          'This passage remains outside the bounds of the preview.';
+    case 'west':
+      return 'The violet door keeps its weight.\n\n'
+          'Whatever waits there will belong to a later descent.';
+    case 'up':
+      return 'The fifth recess remains dark.\n\n'
+          'The public preview ends before the staircase can form.';
+    default:
+      return null;
+  }
+}
 
 int? gameDepthThresholdForSectorToQuinto(String sector) =>
     _depthThresholdsToQuinto[sector];
@@ -2688,7 +2861,11 @@ bool gameTransitEligibleForZone(String fromNodeId, String destNodeId) {
 }
 
 String gameSectorLabel(String nodeId) {
-  if (nodeId == 'intro_void' || nodeId == 'la_soglia') return 'Threshold';
+  if (nodeId == 'intro_void' ||
+      nodeId == 'la_soglia' ||
+      nodeId == 'preview_epilogue') {
+    return 'Threshold';
+  }
   if (nodeId.startsWith('garden')) return 'Garden';
   if (nodeId.startsWith('obs_')) return 'Observatory';
   if (nodeId.startsWith('gal_') || nodeId.startsWith('gallery_'))

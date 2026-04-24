@@ -11,6 +11,7 @@ void main() {
 
     test('maps sector labels for UI surfaces', () {
       expect(gameSectorLabel('garden_cypress'), 'Garden');
+      expect(gameSectorLabel('preview_epilogue'), 'Threshold');
       expect(gameSectorLabel('obs_dome'), 'Observatory');
       expect(gameSectorLabel('quinto_landing'), 'Memory');
       expect(gameSectorLabel('finale_acceptance'), 'Finale');
@@ -60,6 +61,16 @@ void main() {
         ),
         isTrue,
       );
+      expect(
+        gameGardenSteleInscriptionLooksSpecific(
+          'a friend asked me to return to that winter street and apologize by name',
+        ),
+        isTrue,
+      );
+      expect(
+        gameGardenSteleInscriptionLooksSpecific('friendship cost me pride'),
+        isTrue,
+      );
     });
 
     test('classifies garden relinquishment categories from inventory', () {
@@ -69,6 +80,11 @@ void main() {
       expect(coverage['useful'], isTrue);
       expect(coverage['identity'], isTrue);
       expect(coverage['pain'], isTrue);
+
+      final notebookOnly = gameGardenRelinquishmentCoverage(const ['notebook']);
+      expect(notebookOnly['useful'], isFalse);
+      expect(notebookOnly['identity'], isFalse);
+      expect(notebookOnly['pain'], isFalse);
     });
 
     test('classifies zone-eligible transits conservatively', () {

@@ -23,34 +23,31 @@ class GardenModule {
   static const String surfaceMarkerPuzzle = 'garden_surface_complete';
   static const String deepMarkerPuzzle = 'garden_deep_complete';
 
-  static const String _correctLeafOrder =
-      'prudence friendship pleasure simplicity absence tranquillity memory';
-
   static const Set<String> _gardenUsefulItems = {
     'coin',
-    'book',
     'compass',
     'lamp',
-    'key',
     'stylus',
   };
 
   static const Set<String> _gardenIdentityItems = {
-    'notebook',
     'book',
-    'coin',
-    'compass',
-    'lamp',
     'page',
   };
 
   static const Set<String> _gardenPainItems = {
     'rusted key',
     'key',
-    'torn page',
-    'page',
     'mirror shard',
     'earth',
+  };
+
+  static const Set<String> _gardenSteleBondTerms = {
+    'friendship',
+    'friend',
+    'friends',
+    'companion',
+    'companionship',
   };
 
   static const Set<String> _gardenSteleGenericPhrases = {
@@ -103,13 +100,13 @@ class GardenModule {
   static const Map<String, String> gateHints = {
     'leaves_arranged':
         'The fallen leaves bar your way. Their disorder is the lock.\n\n'
-            'Hint: read columns and leaves, then arrange leaves [seven words in Epicurean order].',
+            'Hint: read columns and leaves, then arrange leaves.',
     'fountain_waited':
         'The passage north is not yet open. Something is still arriving.\n\n'
             'Hint: wait, but not mechanically. Attend to fountain and dust between turnings.',
     'stele_inscribed':
         'The grove will not receive you. The blank stele stands in judgement.\n\n'
-            'Hint: inscribe a concrete, costly line about friendship — not a slogan.',
+            'Hint: the missing maxim is friendship. Try: inscribe friendship.',
   };
 
   static const Map<String, NodeDef> roomDefinitions = {
@@ -253,6 +250,9 @@ class GardenModule {
   static bool _containsToken(String text, String token) =>
       RegExp('\\b${RegExp.escape(token)}\\b').hasMatch(text);
 
+  static bool _matchesCategoryToken(String item, String token) =>
+      item == token || _containsToken(item, token);
+
   static bool _inventoryHasCategoryItem(
     Iterable<String> inventory,
     Set<String> category,
@@ -260,7 +260,7 @@ class GardenModule {
     for (final item in inventory) {
       final lower = item.toLowerCase();
       for (final token in category) {
-        if (lower == token || lower.contains(token)) return true;
+        if (_matchesCategoryToken(lower, token)) return true;
       }
     }
     return false;
@@ -271,10 +271,15 @@ class GardenModule {
     if (text.isEmpty) return false;
     final words =
         text.split(RegExp(r'\s+')).where((w) => w.trim().isNotEmpty).toList();
-    if (words.length < 8) return false;
+    if (words.length < 4) return false;
 
     if (_gardenSteleGenericPhrases.contains(text)) return false;
-    if (!text.contains('friendship')) return false;
+    final hasBondTerm = _gardenSteleBondTerms.any((term) {
+      return term.contains(' ')
+          ? text.contains(term)
+          : _containsToken(text, term);
+    });
+    if (!hasBondTerm) return false;
 
     final hasConcrete = _gardenSteleConcreteTerms.any(text.contains);
     final hasCost = _gardenSteleCostTerms.any(text.contains);
@@ -283,7 +288,8 @@ class GardenModule {
         _containsToken(text, 'my') ||
         _containsToken(text, 'mine');
 
-    return hasConcrete && (hasCost || hasFirstPerson);
+    return (hasConcrete && (hasCost || hasFirstPerson)) ||
+        (hasCost && hasFirstPerson);
   }
 
   static Map<String, bool> relinquishmentCoverage(Iterable<String> inventory) {
@@ -409,6 +415,34 @@ class GardenModule {
       }
     }
 
+    if (nodeId == 'garden_alcove_pains' &&
+        target.contains('mirror') &&
+        target.contains('shard')) {
+      if (state.psychoWeight > 0) {
+        return const EngineResponse(
+          narrativeText:
+              'You look into the shard, but what you are still carrying crowds the surface.\n\n'
+              'Set things down first. Pain is clearer when it is not mixed with grasping.',
+        );
+      }
+      if (state.completedPuzzles.contains('alcove_pains_walked')) {
+        return const EngineResponse(
+          narrativeText:
+              'You have already met the shard without claiming it. The alcove has nothing more to demand.',
+        );
+      }
+      return const EngineResponse(
+        narrativeText:
+            'You lift the shard just enough to catch your face and then set it back.\n\n'
+            'The reflection is exact, and because it is exact it does not accuse you. It only remains.\n\n'
+            'You leave the shard where it is. That is the whole action.\n\n'
+            'Something in the alcove releases.',
+        needsDemiurge: true,
+        lucidityDelta: 7,
+        completePuzzle: 'alcove_pains_walked',
+      );
+    }
+
     if (nodeId == 'la_soglia' &&
         target.contains('pedestal') &&
         state.completedPuzzles.contains(surfacePuzzle) &&
@@ -439,9 +473,8 @@ class GardenModule {
     }
     if (cmd.args.isEmpty) {
       return const EngineResponse(
-        narrativeText: 'The leaves shift but settle back unchanged.\n\n'
-            'Seven words, in Epicurean order.\n\n'
-            'Hint: arrange leaves [word word word word word word word]',
+        narrativeText: 'The leaves wait for a single decisive gesture.\n\n'
+            'Hint: arrange leaves.',
       );
     }
     final prepared = state.completedPuzzles.contains('garden_columns_read') &&
@@ -455,35 +488,13 @@ class GardenModule {
       );
     }
 
-    final input = cmd.args
-        .join(' ')
-        .replaceAll(',', '')
-        .replaceAll('-', ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim()
-        .toLowerCase();
-
-    const alternativeOrders = {
-      'prudence friendship absence tranquillity pleasure simplicity memory',
-      'friendship prudence pleasure simplicity absence tranquillity memory',
-      'pleasure friendship prudence simplicity absence tranquillity memory',
-    };
-
-    if (alternativeOrders.contains(input)) {
+    final targetsLeaves =
+        cmd.args.contains('leaf') || cmd.args.contains('leaves');
+    if (targetsLeaves) {
       return const EngineResponse(
-        narrativeText: 'The arrangement is coherent, almost persuasive.\n\n'
-            'For a breath, the avenue seems ready to open.\n\n'
-            'Then the darker leaf twists out of line. This is a philosophy, but not the one this path obeys.',
-      );
-    }
-
-    if (input == _correctLeafOrder) {
-      return const EngineResponse(
-        narrativeText:
-            'The leaves move — or you move them. They settle into a line '
-            'that feels, now that you see it, obvious.\n\n'
-            'prudence — friendship — pleasure — simplicity — '
-            'absence — tranquillity — memory.\n\n'
+        narrativeText: 'You gather the leaves into one patient motion.\n\n'
+            'The darker leaf finds its place first; the others follow as though they had been waiting to remember.\n\n'
+            'prudence — friendship — pleasure — simplicity — absence — tranquillity — memory.\n\n'
             'The path north opens.',
         needsDemiurge: true,
         lucidityDelta: 10,
@@ -493,11 +504,9 @@ class GardenModule {
     }
 
     return const EngineResponse(
-      narrativeText: 'The leaves arrange themselves briefly — then scatter.\n\n'
-          'The order is not correct. '
-          'Consider: what comes first in Epicurean thought? '
-          'What enables everything else?\n\n'
-          'Read the column words in the portico — in reverse.',
+      narrativeText: 'The avenue does not answer that gesture.\n\n'
+          'It is the leaves themselves that must be brought into order.\n\n'
+          'Try: arrange leaves.',
     );
   }
 
@@ -555,33 +564,17 @@ class GardenModule {
   }) {
     final mode = cmd.args.join(' ');
     if (state.nodeId == 'garden_alcove_pleasures' && mode == 'through') {
-      if (state.completedPuzzles.contains('alcove_pleasures_walked')) {
-        return const EngineResponse(
-          narrativeText: 'You have already walked through here.',
-        );
-      }
       return const EngineResponse(
-        narrativeText: 'You walk through without touching anything.\n\n'
-            'It is harder than it sounds. '
-            'The objects pull at a version of you that you choose not to be.',
-        needsDemiurge: true,
-        lucidityDelta: 7,
-        completePuzzle: 'alcove_pleasures_walked',
+        narrativeText: 'Walking is not enough here.\n\n'
+            'The alcove wants one act of attention without possession.\n\n'
+            'Try: smell linden.',
       );
     }
     if (state.nodeId == 'garden_alcove_pains' && mode == 'through') {
-      if (state.completedPuzzles.contains('alcove_pains_walked')) {
-        return const EngineResponse(
-          narrativeText: 'You have already walked through here.',
-        );
-      }
       return const EngineResponse(
-        narrativeText: 'You walk through without taking anything.\n\n'
-            'The objects here pull differently — not with beauty but with familiarity. '
-            'Walking past them feels like a small betrayal and a small liberation.',
-        needsDemiurge: true,
-        lucidityDelta: 7,
-        completePuzzle: 'alcove_pains_walked',
+        narrativeText: 'Walking is not enough here either.\n\n'
+            'This alcove wants recognition, not avoidance.\n\n'
+            'Try: examine mirror shard.',
       );
     }
     return null;
@@ -608,16 +601,32 @@ class GardenModule {
       return const EngineResponse(
         narrativeText:
             'Inscribe what? The stylus is ready, but the maxim must be supplied.\n\n'
-            'Read the eleven that came before. Understand what they build toward.',
+            'The blank stele is waiting for the principle the others lead toward.\n\n'
+            'Try: inscribe friendship.',
       );
     }
     final inscription = cmd.args.join(' ').toLowerCase();
+    final simpleFriendshipCommand = cmd.args.length == 1 &&
+        (inscription == 'friendship' || inscription == 'philia');
+
+    if (simpleFriendshipCommand) {
+      return const EngineResponse(
+        narrativeText: 'You inscribe only one word: friendship.\n\n'
+            'The stylus stops there, but the stone does not. The rest of the maxim arrives as if it had merely been waiting for permission.\n\n'
+            '"Of all wisdom\'s gifts to a happy life, the greatest is the possession of friendship."\n\n'
+            'The twelfth stele is complete. The grove opens.',
+        needsDemiurge: true,
+        lucidityDelta: 12,
+        completePuzzle: 'stele_inscribed',
+        audioTrigger: 'calm',
+      );
+    }
     if (_gardenSteleGenericPhrases.contains(inscription) ||
-        inscription.split(RegExp(r'\s+')).length < 5) {
+        inscription.split(RegExp(r'\s+')).length < 4) {
       return const EngineResponse(
         narrativeText: 'The stylus scratches, then stalls.\n\n'
-            'The stele rejects slogans.\n\n'
-            'Write something concrete: what friendship costs, what it asks, what it changes.',
+            'The stele is not asking for ornament. It is asking for the missing principle.\n\n'
+            'Try: inscribe friendship.',
       );
     }
     if (steleInscriptionLooksSpecific(inscription)) {
@@ -635,7 +644,8 @@ class GardenModule {
     return const EngineResponse(
       narrativeText: 'The marks fade before they settle.\n\n'
           'The stone is asking for a specific and costly truth about friendship, not an abstract praise.\n\n'
-          'Name an action, a risk, a memory, or a wound carried together.',
+          'If you want the shortest path, name the missing principle directly.\n\n'
+          'Try: inscribe friendship.',
     );
   }
 
@@ -644,12 +654,21 @@ class GardenModule {
     required GardenStateView state,
   }) {
     if (state.nodeId != 'garden_grove') return null;
+    final normalizedArgs = cmd.args.map((part) => part.toLowerCase()).toList();
+    final joinedArgs = normalizedArgs.join(' ');
+    final isFinalOfferingAlias = joinedArgs == 'relics' ||
+        joinedArgs == 'all relics' ||
+        joinedArgs == 'everything' ||
+        joinedArgs == 'all';
+    if (isFinalOfferingAlias) {
+      return handleDeposit(state: state);
+    }
 
     if (cmd.args.isEmpty) {
       return const EngineResponse(
         narrativeText:
             'Offer what? The statue receives things, not declarations.\n\n'
-            'Offer one useful object, one identity-bound object, and one pain-bound object.',
+            'Offer one useful object, one identity-bound object, and one pain-bound object from the alcoves.',
       );
     }
     final target = cmd.args.join(' ');
@@ -662,12 +681,12 @@ class GardenModule {
       );
     }
     final lower = match.toLowerCase();
-    final isUseful = _gardenUsefulItems
-        .any((token) => lower == token || lower.contains(token));
+    final isUseful =
+        _gardenUsefulItems.any((token) => _matchesCategoryToken(lower, token));
     final isIdentity = _gardenIdentityItems
-        .any((token) => lower == token || lower.contains(token));
-    final isPain = _gardenPainItems
-        .any((token) => lower == token || lower.contains(token));
+        .any((token) => _matchesCategoryToken(lower, token));
+    final isPain =
+        _gardenPainItems.any((token) => _matchesCategoryToken(lower, token));
     if (!isUseful && !isIdentity && !isPain) {
       return const EngineResponse(
         narrativeText:
@@ -697,10 +716,10 @@ class GardenModule {
       );
     }
     final remainingKinds = <String>[];
-    final willHaveUseful = isUseful ||
-        state.completedPuzzles.contains('garden_offer_useful');
-    final willHaveIdentity = isIdentity ||
-        state.completedPuzzles.contains('garden_offer_identity');
+    final willHaveUseful =
+        isUseful || state.completedPuzzles.contains('garden_offer_useful');
+    final willHaveIdentity =
+        isIdentity || state.completedPuzzles.contains('garden_offer_identity');
     final willHavePain =
         isPain || state.completedPuzzles.contains('garden_offer_pain');
     if (!willHaveUseful) remainingKinds.add('something useful');
@@ -776,7 +795,8 @@ class GardenModule {
     if (missingKinds.isNotEmpty) {
       final missingLine = switch (missingKinds.length) {
         1 => 'Only one relinquishment remains: ${missingKinds.single}.',
-        2 => 'Two relinquishments are still absent: ${missingKinds.join(', ')}.',
+        2 =>
+          'Two relinquishments are still absent: ${missingKinds.join(', ')}.',
         _ => 'You are still carrying the whole shape of yourself.\n\n'
             'Three relinquishments are required: one useful thing, one identity-bound thing, one pain-bound thing.',
       };
@@ -788,18 +808,20 @@ class GardenModule {
     }
 
     return const EngineResponse(
-      narrativeText: 'You place everything at the statue\'s feet.\n\n'
+      narrativeText: 'You offer the relics at the statue\'s feet.\n\n'
           'Nothing resists you. The objects settle into a loose circle, diminished now that they are no longer yours.\n\n'
           'For one long suspended breath, the grove asks nothing of you.\n\n'
           'Then, in one of the open hands: a glass sphere, perfectly empty. Ataraxia.\n\n'
-          '✦ You have recovered ataraxia. The Archive marks the moment.',
+          '✦ You have recovered ataraxia. The Archive marks the moment.\n\n'
+          'This threshold of stillness is where the public preview ends.',
       needsDemiurge: true,
       lucidityDelta: 10,
       anxietyDelta: -20,
-      audioTrigger: 'simulacrum',
+      audioTrigger: 'preview_closure',
       grantItem: 'ataraxia',
       completePuzzle: 'garden_complete',
       clearInventoryOnDeposit: true,
+      newNode: 'preview_epilogue',
       feedbackKind: FeedbackKind.majorRevelation,
       revealMode: TextRevealMode.wordByWord,
       preDisplayPause: Duration(seconds: 3),

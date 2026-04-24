@@ -4,9 +4,9 @@ This repository currently ships a fully curated music catalog:
 
 - all runtime music cues come from explicit `CC0` releases by Kimiko Ishizaka
 - `proustian_trigger` is a local excerpt derived from one of those `CC0` masters
-- two pilot ambience beds are repository-generated ffmpeg collages built as
-  concrete world-sound + minimal ambient texture (`ambient_giardino`,
-  `ambient_osservatorio`)
+- three preview ambience beds are repository-generated ffmpeg collages built as
+  concrete world-sound + minimal ambient texture (`ambient_soglia`,
+  `ambient_giardino`, `ambient_osservatorio`)
 - legacy synthesis tooling remains in the repository, but no checked-in runtime
   cue currently depends on it
 
@@ -16,8 +16,8 @@ This repository currently ships a fully curated music catalog:
 
 - File: `assets/audio/ambient_soglia_air.ogg`
 - Type: local ambience collage
-- Construction: breathing air, hollow room resonance, restrained low drone,
-  faint shimmer
+- Construction: hollow air, restrained low resonance, sparse glass
+  tintinnabulation
 - Toolchain: `ffmpeg` lavfi generators only
 - License: original repository-generated synthesis, no third-party recording
 
@@ -25,8 +25,8 @@ This repository currently ships a fully curated music catalog:
 
 - File: `assets/audio/ambient_giardino_water.ogg`
 - Type: local ambience collage
-- Construction: water-like filtered noise, sparse droplet pulses, airy rustle,
-  restrained minimal pad
+- Construction: water bed, sparse droplets, leaf-rustle air, faint bell-like
+  glints
 - Toolchain: `ffmpeg` lavfi generators only
 - License: original repository-generated synthesis, no third-party recording
 
@@ -34,8 +34,8 @@ This repository currently ships a fully curated music catalog:
 
 - File: `assets/audio/ambient_osservatorio_metal.ogg`
 - Type: local ambience collage
-- Construction: airy friction, distant metallic resonances, restrained low
-  drone, faint minimal pad
+- Construction: airy friction, low resonance, distant metal strikes and
+  ringing tails
 - Toolchain: `ffmpeg` lavfi generators only
 - License: original repository-generated synthesis, no third-party recording
 

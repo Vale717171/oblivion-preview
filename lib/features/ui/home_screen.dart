@@ -263,7 +263,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     child: Column(
                                       children: [
                                         Text(
-                                          'RITUAL TEXT EXPERIENCE',
+                                          'PUBLIC PREVIEW',
                                           style: RitualTypography.command(
                                             11.4 * textScale,
                                             color: profile.accent
@@ -316,7 +316,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ),
                                   const SizedBox(height: 20),
                                   Text(
-                                    'A psycho-philosophical ritual text adventure about memory, burden, and the temptation of oblivion.',
+                                    'A short atmospheric descent through the Threshold and the Garden — a self-contained preview built to discover whether this world deserves a full release.',
                                     style: RitualTypography.narrative(
                                       18.5 * textScale,
                                       color: bodyColor.withValues(alpha: 0.95),
@@ -325,7 +325,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ),
                                   const SizedBox(height: 14),
                                   Text(
-                                    'ENGLISH ONLY · SLOW INPUT · 10–20 MINUTES PER SESSION',
+                                    'ENGLISH ONLY · HEADPHONES RECOMMENDED · ABOUT 15 MINUTES',
                                     style: RitualTypography.ritualSans(
                                       12.2 * textScale,
                                       color: mutedColor.withValues(alpha: 0.95),
@@ -335,14 +335,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   const SizedBox(height: 24),
                                   _HomeActionButton(
                                     label: hasProgress
-                                        ? 'Continue the Descent'
-                                        : 'Enter the Archive',
+                                        ? 'Continue the Preview'
+                                        : 'Begin the Preview',
                                     onPressed: () =>
                                         _openGame(startFresh: false),
                                   ),
                                   const SizedBox(height: 10),
                                   _HomeActionButton(
-                                    label: 'Begin a New Run',
+                                    label: 'Restart the Preview',
                                     outlined: true,
                                     onPressed: () =>
                                         _openGame(startFresh: true),
@@ -381,7 +381,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ),
                                   const SizedBox(height: 18),
                                   Text(
-                                    'The Demiurge answers uncertainty. Mistakes may still be coordinates.',
+                                    'If you reach the end, tell us whether you want the full descent: a comment on itch.io is the clearest signal that this should continue.',
                                     style: RitualTypography.narrative(
                                       14 * textScale,
                                       color: mutedColor.withValues(alpha: 0.92),

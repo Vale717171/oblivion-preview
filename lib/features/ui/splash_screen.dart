@@ -4,7 +4,7 @@
 //
 // Sequence (normal mode):
 //   1. Black screen → bg_soglia fades in over 1 500 ms.
-//   2. The Threshold ambience starts softly — no Bach furniture at launch.
+//   2. A barely-there Bach threshold motif starts softly under the image.
 //   3. After 1 600 ms the title container becomes visible; the typewriter
 //      begins writing "The Archive of Oblivion" at ~75 ms / char.
 //   4. Once the title is complete, a "Play" button appears and waits for the
@@ -17,6 +17,7 @@
 //   immediately, but the screen still waits for explicit confirmation.
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,7 +37,8 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
-  static const String _fullTitle = 'The Archive of Oblivion';
+  static const String _fullTitle = 'The Archive of Oblivion Preview';
+  static const String _subtitle = 'Public Preview';
 
   // ── state ──────────────────────────────────────────────────────────────────
   String _displayedTitle = '';
@@ -45,6 +47,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   bool _titleVisible = false;
   bool _showPlayButton = false;
   bool _exiting = false;
+  bool _showSubtitle = false;
+  bool _titleCueUnlocked = false;
 
   Timer? _typewriterTimer;
 
@@ -72,32 +76,41 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final settings = ref.read(appSettingsProvider).valueOrNull;
     final reduceMotion = settings?.reduceMotion ?? false;
 
+    // Preload the title cue so the first user tap can start it immediately on
+    // web without running into autoplay restrictions.
+    // ignore: discarded_futures
+    AudioService().prepareTitleSceneCue();
+
     // Show background (instant with reduceMotion, animated otherwise).
     setState(() => _bgVisible = true);
-
-    // Start only the Threshold ambience so Bach remains a revelation later.
-    AudioService().syncForNode('intro_void', force: true);
 
     if (reduceMotion) {
       // Skip all animation but still let the player control when to enter.
       setState(() {
         _titleVisible = true;
+        _showSubtitle = true;
         _displayedTitle = _fullTitle;
         _charIndex = _fullTitle.length;
         _showPlayButton = true;
       });
+      if (!kIsWeb) _unlockTitleCue();
     } else {
       // Wait for the background to finish fading before typing begins.
       Future.delayed(const Duration(milliseconds: 1600), () {
         if (!mounted || _exiting) return;
-        setState(() => _titleVisible = true);
+        setState(() {
+          _titleVisible = true;
+          _showSubtitle = true;
+        });
+        if (!kIsWeb) _unlockTitleCue();
         _startTypewriter();
       });
     }
   }
 
   void _startTypewriter() {
-    _typewriterTimer = Timer.periodic(const Duration(milliseconds: 75), (timer) {
+    _typewriterTimer =
+        Timer.periodic(const Duration(milliseconds: 75), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
@@ -122,15 +135,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     // Haptic only when allowed.
     final settings = ref.read(appSettingsProvider).valueOrNull;
-    if ((settings?.enableHaptics ?? true) && !(settings?.reduceMotion ?? false)) {
+    if ((settings?.enableHaptics ?? true) &&
+        !(settings?.reduceMotion ?? false)) {
       HapticFeedback.lightImpact();
     }
+
+    _unlockTitleCue();
 
     if (_charIndex >= _fullTitle.length) return;
 
     _typewriterTimer?.cancel();
 
     setState(() {
+      _titleVisible = true;
+      _showSubtitle = true;
       _displayedTitle = _fullTitle;
       _charIndex = _fullTitle.length;
       _showPlayButton = true;
@@ -139,8 +157,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   // ── navigation ─────────────────────────────────────────────────────────────
 
+  void _unlockTitleCue() {
+    if (_titleCueUnlocked) return;
+    _titleCueUnlocked = true;
+    AudioService().unlockAndPlayTitleCue();
+  }
+
   void _navigateToHome() {
     if (_exiting) return;
+    _unlockTitleCue();
     _exiting = true;
 
     Navigator.of(context).pushReplacement(
@@ -197,15 +222,81 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 36.0),
-                  child: Text(
-                    _displayedTitle,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Color(0xFFE9E3D6),
-                      fontSize: 30,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.4,
-                      height: 1.5,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _displayedTitle,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xFFE9E3D6),
+                          fontSize: 30,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.4,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      AnimatedOpacity(
+                        opacity: _showSubtitle ? 1.0 : 0.0,
+                        duration: reduceMotion
+                            ? Duration.zero
+                            : const Duration(milliseconds: 320),
+                        child: const Text(
+                          _subtitle,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFFD4C7AE),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 2.4,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      AnimatedOpacity(
+                        opacity: _showSubtitle ? 1.0 : 0.0,
+                        duration: reduceMotion
+                            ? Duration.zero
+                            : const Duration(milliseconds: 420),
+                        child: const Text(
+                          'A playable threshold. A first descent into stillness.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Color(0xFFE9E3D6),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0.4,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SafeArea(
+                minimum: const EdgeInsets.fromLTRB(24, 24, 24, 112),
+                child: AnimatedOpacity(
+                  opacity: _showPlayButton ? 1.0 : 0.0,
+                  duration: reduceMotion
+                      ? Duration.zero
+                      : const Duration(milliseconds: 280),
+                  child: const IgnorePointer(
+                    ignoring: true,
+                    child: Text(
+                      'Headphones recommended · best experienced in silence',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFFD4C7AE),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.4,
+                      ),
                     ),
                   ),
                 ),
@@ -238,7 +329,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                           letterSpacing: 1.2,
                         ),
                       ),
-                      child: const Text('PLAY'),
+                      child: const Text('ENTER PREVIEW'),
                     ),
                   ),
                 ),

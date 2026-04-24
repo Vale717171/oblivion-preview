@@ -13,9 +13,9 @@ class ArchivePanels {
       builder: (context) => const _ArchiveTextDialog(
         title: 'Introduction',
         body:
-            'You awaken in the Archive, a metaphysical threshold between memory and oblivion.\n\n'
-            'Four sectors ask you to recover what gives human life weight: philosophy, science, art, and transformation. A fifth asks what remains when memory itself speaks.\n\n'
-            'The Archive does not judge. It witnesses.',
+            'You awaken in the Archive, a threshold between memory and oblivion.\n\n'
+            'This public preview opens a single self-contained descent: the Garden path. It is about stillness, friendship, and what can be relinquished without becoming empty.\n\n'
+            'The other doors remain shut here. What matters is whether this first threshold stays with you.',
       ),
     );
   }
@@ -26,17 +26,18 @@ class ArchivePanels {
       builder: (context) => const _ArchiveTextDialog(
         title: 'How to play',
         body: 'This is a parser narrative. Type short commands.\n\n'
+            'In this preview, begin with the north door.\n\n'
             'Useful verbs:\n'
             '• go north / south / east / west\n'
             '• look\n'
             '• examine object\n'
             '• take object\n'
+            '• drop object\n'
             '• wait\n'
             '• inventory\n'
-            '• hint / hint more / hint full\n'
             '• help\n\n'
             'Unrecognised commands do not always mean failure: the Demiurge may answer instead.\n\n'
-            'Psychological weight matters. Carrying everything is not always wise.',
+            'Psychological weight matters. Carrying everything is not always wise, and in the Garden it can stop you from understanding what the room is asking.',
       ),
     );
   }
@@ -47,7 +48,7 @@ class ArchivePanels {
       builder: (context) => const _ArchiveTextDialog(
         title: 'Credits',
         body: "The Archive of Oblivion\n\n"
-            'A psycho-philosophical interactive fiction for Android.\n\n'
+            'A psycho-philosophical interactive fiction public preview.\n\n'
             'Built with Flutter, Riverpod, sqflite, just_audio, and the deterministic narrator “All That Is”.\n\n'
             'Citations are curated from public-domain sources.',
       ),
@@ -191,7 +192,7 @@ class _SettingsSheet extends ConsumerWidget {
                     notifier.saveSettings(commandAssist: value),
                 title: const Text('Command assist'),
                 subtitle:
-                    const Text('Show quick commands and contextual hints.'),
+                    const Text('Hidden in this preview to preserve discovery.'),
               ),
               SwitchListTile(
                 value: settings.musicEnabled,
@@ -304,66 +305,20 @@ class _ArchiveStatusDialog extends StatelessWidget {
             engine.inventory.contains('ataraxia'),
       ),
       _SectorStatus(
-        label: 'Observatory',
-        stateLabel: engine.completedPuzzles.contains('obs_complete')
-            ? 'The Constant recovered'
-            : 'Unexplored',
-        detail: engine.completedPuzzles.contains('obs_complete')
-            ? 'The inward observation is complete.'
-            : 'The telescope still seeks its witness.',
-        complete: engine.completedPuzzles.contains('obs_complete') ||
-            engine.inventory.contains('the constant'),
-      ),
-      _SectorStatus(
-        label: 'Gallery',
-        stateLabel: engine.completedPuzzles.contains('gallery_complete')
-            ? 'The Proportion recovered'
-            : 'Unexplored',
-        detail: engine.completedPuzzles.contains('gallery_complete')
-            ? 'The mirror yielded its geometry.'
-            : 'The boundary is not ready to break.',
-        complete: engine.completedPuzzles.contains('gallery_complete') ||
-            engine.inventory.contains('the proportion'),
-      ),
-      _SectorStatus(
-        label: 'Laboratory',
-        stateLabel: engine.completedPuzzles.contains('lab_complete')
-            ? 'The Catalyst recovered'
-            : 'Unexplored',
-        detail: engine.completedPuzzles.contains('lab_complete')
-            ? 'Transformation recognised your breath.'
-            : 'The Great Work remains unfinished.',
-        complete: engine.completedPuzzles.contains('lab_complete') ||
-            engine.inventory.contains('the catalyst'),
-      ),
-      _SectorStatus(
-        label: 'Memory',
-        stateLabel: engine.completedPuzzles.contains('ritual_complete')
-            ? 'Ritual completed'
-            : engine.completedPuzzles.containsAll(const {
-                'memory_childhood',
-                'memory_youth',
-                'memory_maturity',
-                'memory_old_age',
-              })
-                ? 'Four memories offered'
-                : 'Unexplored',
-        detail: engine.completedPuzzles.contains('ritual_complete')
-            ? 'The fifth descent is open.'
-            : 'The sector waits for what only you can say.',
-        complete: engine.completedPuzzles.contains('ritual_complete') ||
-            engine.completedPuzzles.containsAll(const {
-              'memory_childhood',
-              'memory_youth',
-              'memory_maturity',
-              'memory_old_age',
-            }),
+        label: 'Threshold',
+        stateLabel: engine.completedPuzzles.contains('garden_complete')
+            ? 'Preview complete'
+            : 'Awaiting stillness',
+        detail: engine.completedPuzzles.contains('garden_complete')
+            ? 'The first descent resolved into a held silence.'
+            : 'Only the Garden path is open in this build.',
+        complete: engine.completedPuzzles.contains('garden_complete'),
       ),
     ];
 
     return AlertDialog(
       backgroundColor: const Color(0xFF111111),
-      title: const Text('Archive Status'),
+      title: const Text('Preview Status'),
       content: SizedBox(
         width: 520,
         child: SingleChildScrollView(

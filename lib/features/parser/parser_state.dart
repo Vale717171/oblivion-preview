@@ -50,7 +50,7 @@ enum CommandVerb {
   inventory, // inventory / i
   smell, // smell [X] — Proustian trigger
   taste, // taste [X] — Proustian trigger (Lab)
-  arrange, // arrange leaves [order] — Cypress Avenue puzzle
+  arrange, // arrange leaves — Cypress Avenue puzzle
   walk, // walk through / walk blindfolded
   combine, // combine X, Y — Observatory puzzle
   press, // press X — Gallery puzzle

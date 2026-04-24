@@ -5,6 +5,66 @@
 
 ---
 
+### 2026-04-22 — Codex GPT-5 (Preview audio direction: ambience-first, Bach only at closure)
+**Role:** Audio-direction correction for the public preview slice
+
+**Done:**
+- Kept the preview ambience-first by disabling solved-puzzle soft Bach cues in `lib/features/game/game_engine_provider.dart` when running the preview build.
+- Replaced the Garden completion trigger with a dedicated `preview_closure` cue in `lib/features/game/garden/garden_module.dart`.
+- Added `preview_closure` handling in `lib/features/audio/audio_service.dart`:
+  - delayed entry after the Ataraxia pause
+  - very low start
+  - gradual volume rise
+  - gentle ambient duck underneath
+- Slightly reinforced the ambient bed in preview mode so the slice feels materially present even before the Bach closure.
+
+**Validation:**
+- `flutter analyze lib/features/audio/audio_service.dart` ✅
+
+**Why this pass matters:**
+- The preview now demonstrates the intended final grammar more clearly:
+  - ambience carries the world
+  - Bach arrives only as an earned revelation
+  - the end of the slice now previews the emotional logic of the full game rather than merely rewarding completion.
+
+### 2026-04-22 — Codex GPT-5 (Preview framing pass: Splash + Home)
+**Role:** Editorial/UI framing pass for the public-facing vertical slice
+
+**Done:**
+- Updated `lib/features/ui/splash_screen.dart` so the opening now presents itself explicitly as a `Public Preview`.
+- Added a brief atmospheric subtitle and a gentle listening cue on the splash screen.
+- Changed the splash CTA from generic `PLAY` to `ENTER PREVIEW`.
+- Updated `lib/features/ui/home_screen.dart` copy to describe the build as a short Threshold/Garden preview rather than the full ritual text adventure.
+- Renamed the main home CTAs to `Begin the Preview`, `Continue the Preview`, and `Restart the Preview`.
+- Added clearer messaging that the end of the slice will invite comments and interest signals.
+
+**Validation:**
+- `flutter analyze lib/features/ui/splash_screen.dart lib/features/ui/home_screen.dart` ✅
+
+**Why this pass matters:**
+- The preview now declares its identity from the first screen instead of feeling like an internal build of the full project.
+- This should reduce confusion and make the itch.io version feel more intentional before the player has even entered the Threshold.
+
+### 2026-04-22 — Codex GPT-5 (Preview scope closure: Threshold -> Garden -> epilogue)
+**Role:** First real pruning pass on the dedicated preview repository
+
+**Done:**
+- Narrowed the Threshold in `lib/features/game/game_engine_provider.dart` so the preview now clearly points north toward the Garden instead of behaving like the full multi-sector hub.
+- Added preview-specific blocking text for the east, south, west, and upward paths from the Threshold.
+- Added a dedicated `preview_epilogue` node with closing copy intended for the public itch.io slice.
+- Redirected Garden completion in `lib/features/game/garden/garden_module.dart` to the preview epilogue, so Ataraxia now functions as the end of the vertical slice.
+- Updated `test/garden_module_test.dart` to assert that Garden completion now transitions into the preview ending.
+
+**Validation:**
+- `flutter test test/garden_module_test.dart` ✅
+- `flutter analyze lib/features/game/game_engine_provider.dart lib/features/game/garden/garden_module.dart test/garden_module_test.dart`
+  - no errors
+  - existing warnings/info remain in `game_engine_provider.dart` from the inherited production base
+
+**Why this pass matters:**
+- The preview repository now behaves more like a product and less like a full game snapshot.
+- The slice has a real end condition instead of simply exposing the next sectors by inertia.
+
 ### 2026-04-22 — Codex GPT-5 (Garden release-slice readability pass)
 **Role:** Narrow Garden pacing pass aligned with `release_slice_contract.md`
 

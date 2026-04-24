@@ -32,17 +32,8 @@ void main() {
         SectorCommandContext(
           cmd: const ParsedCommand(
             verb: CommandVerb.arrange,
-            args: [
-              'prudence',
-              'friendship',
-              'pleasure',
-              'simplicity',
-              'absence',
-              'tranquillity',
-              'memory'
-            ],
-            rawInput:
-                'arrange leaves prudence friendship pleasure simplicity absence tranquillity memory',
+            args: ['leaves'],
+            rawInput: 'arrange leaves',
           ),
           nodeId: 'garden_cypress',
           node: gardenSectorContract.roomDefinitions['garden_cypress']!,
@@ -134,14 +125,14 @@ void main() {
 
     test('returns null for unrelated node', () {
       final response = router.routeCommand(
-        SectorCommandContext(
-          cmd: const ParsedCommand(
+        const SectorCommandContext(
+          cmd: ParsedCommand(
             verb: CommandVerb.arrange,
             args: ['x'],
             rawInput: 'arrange x',
           ),
           nodeId: 'lab_alembic',
-          node: const NodeDef(title: 'x', description: 'x', exits: {}),
+          node: NodeDef(title: 'x', description: 'x', exits: {}),
           snapshot: snapshot,
         ),
       );
@@ -157,7 +148,7 @@ void main() {
           fromNode: 'la_soglia',
           destNode: 'garden_portico',
           snapshot: SectorRuntimeSnapshot(
-            completedPuzzles: {'garden_complete'},
+            completedPuzzles: {'garden_complete', 'garden_arrival'},
             puzzleCounters: {},
             inventory: ['notebook'],
             psychoWeight: 0,

@@ -8,6 +8,7 @@ class AudioTrackCatalog {
 
     // Sector bases
     'soglia': 'assets/audio/bach_bwv846_soglia.ogg',
+    'title_soglia': 'assets/audio/bach_aria_goldberg.ogg',
     'giardino': 'assets/audio/bach_goldberg_giardino.ogg',
     'osservatorio': 'assets/audio/bach_contrapunctus_observatory.ogg',
     'galleria': 'assets/audio/bach_bwv846_galleria.ogg',
@@ -18,7 +19,8 @@ class AudioTrackCatalog {
     // Room overrides
     'giardino_fountain': 'assets/audio/garden_fountain_variation.ogg',
     'giardino_stelae': 'assets/audio/garden_stelae_variation.ogg',
-    'osservatorio_calibration': 'assets/audio/observatory_calibration_variation.ogg',
+    'osservatorio_calibration':
+        'assets/audio/observatory_calibration_variation.ogg',
     'osservatorio_dome': 'assets/audio/observatory_dome_variation.ogg',
     'galleria_dark': 'assets/audio/gallery_dark_variation.ogg',
     'galleria_light': 'assets/audio/gallery_light_variation.ogg',
@@ -47,6 +49,7 @@ class AudioTrackCatalog {
   static const Map<String, String> _nodeOverrides = {
     'intro_void': 'soglia',
     'la_soglia': 'soglia',
+    'preview_epilogue': 'aria_goldberg',
     'garden_fountain': 'giardino_fountain',
     'garden_stelae': 'giardino_stelae',
     'obs_calibration': 'osservatorio_calibration',
@@ -90,6 +93,19 @@ class AudioTrackCatalog {
     'memoria_ritual': 0.02,
   };
 
+  static const Map<String, double> _nodeVolumeBiases = {
+    'garden_fountain': 0.04,
+    'garden_stelae': 0.03,
+    'garden_grove': 0.03,
+    'gallery_hall': 0.02,
+    'gallery_corridor': 0.03,
+    'gallery_central': 0.04,
+    'quinto_landing': -0.04,
+    'quinto_ritual_chamber': 0.03,
+    'preview_epilogue': 0.05,
+    'la_zona': 0.02,
+  };
+
   /// Returns the ambient track key for a sector, or null if no ambient should
   /// play (memoria and la_zona already have their own atmospheric quality;
   /// special tracks such as oblivion/silence are also excluded by the caller).
@@ -121,6 +137,9 @@ class AudioTrackCatalog {
   static double mixVolumeBiasForKey(String key) =>
       _musicVolumeBiases[key] ?? 0.0;
 
+  static double mixVolumeBiasForNode(String? nodeId) =>
+      nodeId == null ? 0.0 : (_nodeVolumeBiases[nodeId] ?? 0.0);
+
   static String? trackForNode(String nodeId) {
     final override = _nodeOverrides[nodeId];
     if (override != null) return override;
@@ -128,7 +147,11 @@ class AudioTrackCatalog {
   }
 
   static String sectorForNode(String nodeId) {
-    if (nodeId == 'intro_void' || nodeId == 'la_soglia') return 'soglia';
+    if (nodeId == 'intro_void' ||
+        nodeId == 'la_soglia' ||
+        nodeId == 'preview_epilogue') {
+      return 'soglia';
+    }
     if (nodeId.startsWith('garden')) return 'giardino';
     if (nodeId.startsWith('obs_')) return 'osservatorio';
     if (nodeId.startsWith('gal_') || nodeId.startsWith('gallery_')) {

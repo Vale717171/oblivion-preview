@@ -5,6 +5,7 @@
 // Note: setVolume() crossfade via duration param does not exist in just_audio —
 // replaced with manual volume ramp via Future.delayed steps.
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
@@ -23,13 +24,15 @@ class AudioService with WidgetsBindingObserver {
   static const double _lucidityVolumeScale = 0.04;
   static const double _baseTrackVolume = 0.74;
   static const double _ariaGoldbergVolume = 0.85;
+  static const double _previewClosureGoldbergLift = 0.04;
   static const double _sicilianoVolume = 0.78;
   static const double _oblivionVolume = 0.50;
   static const double _zoneVolume = 0.68;
   static const double _maxMixVolume = 0.90;
   static const double _ambientVolume =
-      0.38; // ambient layer target (scales with musicVolume)
-  static const bool _rewardFirstBachMode = true;
+      0.24; // ambient layer target (scales with musicVolume)
+  static const bool _rewardFirstBachMode = false;
+  static const bool _ambientOnlyGameplay = true;
   factory AudioService() => _instance;
   AudioService._internal();
 
@@ -64,8 +67,13 @@ class AudioService with WidgetsBindingObserver {
   // Separate ramp-generation counter for the ambient player — allows ambient
   // and music ramps to run independently without interfering.
   int _ambientRampGeneration = 0;
+  int _rewardRampGeneration = 0;
   String? _currentAmbientKey;
   bool _bachIsPlaying = false;
+  bool _webPlayersUnlocked = false;
+  bool _titleCuePrepared = false;
+  bool _titleCuePlaying = false;
+  bool _gameplayAudioUnlocked = false;
 
   // Fix #3b: the most recently requested track key (set in syncForNode before
   // enqueuing). Allows _syncForNodeInternal to skip stale intermediate targets
@@ -74,11 +82,8 @@ class AudioService with WidgetsBindingObserver {
 
   // SFX (one-shot, do not loop)
   final Map<String, String> _sfxAssets = {
-    'proustian_trigger':  'assets/audio/sfx_proustian_trigger.ogg',
-    // Reuse the shipped cue until dedicated assets are added.
-    'command_accepted':   'assets/audio/sfx_proustian_trigger.ogg',
-    'command_rejected':   'assets/audio/sfx_proustian_trigger.ogg',
-    'sector_entry':       'assets/audio/sfx_proustian_trigger.ogg',
+    'proustian_trigger': 'assets/audio/sfx_proustian_trigger.ogg',
+    'command_rejected': 'assets/audio/sfx_proustian_trigger.ogg',
   };
 
   // Dedicated reusable player for typewriter ticks.
@@ -145,10 +150,95 @@ class AudioService with WidgetsBindingObserver {
     if (initialSettings != null) {
       _lastSettings = initialSettings;
     }
-    final initialGameState = container.read(gameStateProvider).valueOrNull;
-    if (initialGameState != null) {
-      syncForNode(initialGameState.currentNode);
+    // Do not auto-start the in-game score during app boot. The public preview
+    // opens with a title cue after the first user gesture, then hands off to
+    // gameplay audio when the player begins typing.
+  }
+
+  Future<void> prepareTitleSceneCue() async {
+    const key = 'title_soglia';
+    final asset = AudioTrackCatalog.assetForKey(key);
+    if (asset == null || !await _assetExists(asset)) return;
+
+    try {
+      await _rewardPlayer.setAsset(asset);
+      await _rewardPlayer.setLoopMode(LoopMode.off);
+      await _rewardPlayer.setVolume(0.0);
+
+      if (kIsWeb) {
+        await _backgroundPlayer.setAsset(asset);
+        await _backgroundPlayer.setLoopMode(LoopMode.one);
+        await _backgroundPlayer.setVolume(0.0);
+
+        await _ambientPlayer.setAsset(asset);
+        await _ambientPlayer.setLoopMode(LoopMode.off);
+        await _ambientPlayer.setVolume(0.0);
+      }
+
+      _titleCuePrepared = true;
+    } catch (e) {
+      // ignore: avoid_print
+      print('[Audio] Title cue prepare failed: $e');
     }
+  }
+
+  void unlockAndPlayTitleCue() {
+    if (!_titleCuePrepared) {
+      // ignore: discarded_futures
+      handleTrigger('title_soglia');
+      return;
+    }
+
+    if (kIsWeb && !_webPlayersUnlocked) {
+      _webPlayersUnlocked = true;
+      // Ignore returned futures on purpose: we want the browser to receive
+      // immediate play() calls inside the user's gesture window.
+      // ignore: discarded_futures
+      _backgroundPlayer.play();
+      // ignore: discarded_futures
+      _backgroundPlayer.pause();
+      // ignore: discarded_futures
+      _backgroundPlayer.seek(Duration.zero);
+      // ignore: discarded_futures
+      _ambientPlayer.play();
+      // ignore: discarded_futures
+      _ambientPlayer.pause();
+      // ignore: discarded_futures
+      _ambientPlayer.seek(Duration.zero);
+      // ignore: discarded_futures
+      _rewardPlayer.play();
+      // ignore: discarded_futures
+      _rewardPlayer.pause();
+      // ignore: discarded_futures
+      _rewardPlayer.seek(Duration.zero);
+    }
+
+    _titleCuePlaying = true;
+    // ignore: discarded_futures
+    _playTitleCueInternal();
+  }
+
+  Future<void> fadeOutTitleCue({
+    int steps = 48,
+    int msPerStep = 80,
+  }) async {
+    if (!_titleCuePlaying && _rewardPlayer.volume <= 0.01) return;
+    _titleCuePlaying = false;
+    await _rampRewardVolume(0.0, steps: steps, msPerStep: msPerStep);
+    await _rewardPlayer.stop();
+  }
+
+  Future<void> transitionTitleCueToGameplay(String nodeId) async {
+    _gameplayAudioUnlocked = true;
+    _currentNodeId = nodeId;
+    await _backgroundPlayer.stop();
+    await _backgroundPlayer.setVolume(0.0);
+    await _backgroundPlayer.setSpeed(1.0);
+    // Bring the room tone in under the outgoing title Aria, so the transition
+    // feels like a fade through air rather than a hard stop into ambience.
+    // ignore: discarded_futures
+    _syncAmbientForNode(nodeId);
+    await fadeOutTitleCue();
   }
 
   Future<void> syncForNode(String nodeId, {bool force = false}) async {
@@ -156,6 +246,16 @@ class AudioService with WidgetsBindingObserver {
     // This lets _syncForNodeInternal detect and skip stale intermediate targets.
     final trackKey = AudioTrackCatalog.trackForNode(nodeId);
     if (trackKey != null) _latestRequestedTrackKey = trackKey;
+    if (!_gameplayAudioUnlocked || _titleCuePlaying) {
+      _currentNodeId = nodeId;
+      return;
+    }
+    if (_ambientOnlyGameplay) {
+      _currentNodeId = nodeId;
+      // ignore: discarded_futures
+      _syncAmbientForNode(nodeId);
+      return;
+    }
     await _enqueueAudioOperation(() async {
       await _syncForNodeInternal(nodeId, force: force);
     });
@@ -167,6 +267,11 @@ class AudioService with WidgetsBindingObserver {
   }
 
   Future<void> _syncForNodeInternal(String nodeId, {bool force = false}) async {
+    if (!_gameplayAudioUnlocked) {
+      _currentNodeId = nodeId;
+      return;
+    }
+
     final trackKey = AudioTrackCatalog.trackForNode(nodeId);
     if (trackKey == null) {
       // ignore: avoid_print
@@ -187,6 +292,7 @@ class AudioService with WidgetsBindingObserver {
 
     final previousNodeId = _currentNodeId;
     _currentNodeId = nodeId;
+
     if (!force && previousNodeId == nodeId && _currentAmbienceKey == trackKey) {
       return;
     }
@@ -233,8 +339,16 @@ class AudioService with WidgetsBindingObserver {
       }
       if (trigger.startsWith('sfx:')) {
         final sfxKey = trigger.substring(4); // strip 'sfx:' prefix
-        final asset  = _sfxAssets[sfxKey];
+        final asset = _sfxAssets[sfxKey];
         if (asset != null) await playSFX(asset);
+        return;
+      }
+      if (_ambientOnlyGameplay && _gameplayAudioUnlocked) {
+        if (trigger == 'calm' ||
+            trigger == 'simulacrum' ||
+            trigger == 'anxious') {
+          await _applyMoodEffects();
+        }
         return;
       }
       if (trigger == 'reward_bach') {
@@ -243,6 +357,14 @@ class AudioService with WidgetsBindingObserver {
       }
       if (trigger == 'reward_bach_soft') {
         await _playBachSoftCue();
+        return;
+      }
+      if (trigger == 'preview_closure') {
+        await _playPreviewClosureTrack();
+        return;
+      }
+      if (trigger == 'title_soglia') {
+        await _playTitleCueInternal();
         return;
       }
       if (trigger == 'silence') {
@@ -326,12 +448,23 @@ class AudioService with WidgetsBindingObserver {
       if (!settings.musicEnabled || settings.musicVolume <= 0) {
         await _backgroundPlayer.stop();
         await _backgroundPlayer.setVolume(0.0);
-        await _backgroundPlayer.setSpeed(1.0); // clear any oblivion speed distortion
+        await _backgroundPlayer
+            .setSpeed(1.0); // clear any oblivion speed distortion
         // Also silence ambient when music is globally disabled.
         _ambientRampGeneration++;
         await _ambientPlayer.stop();
         await _ambientPlayer.setVolume(0.0);
         _currentAmbientKey = null;
+        return;
+      }
+
+      if (_ambientOnlyGameplay && _gameplayAudioUnlocked) {
+        await _backgroundPlayer.stop();
+        await _backgroundPlayer.setVolume(0.0);
+        await _backgroundPlayer.setSpeed(1.0);
+        if (_currentNodeId != null) {
+          await _syncAmbientForNode(_currentNodeId!);
+        }
         return;
       }
 
@@ -371,9 +504,11 @@ class AudioService with WidgetsBindingObserver {
         : null;
     final newFamily = AudioTrackCatalog.sectorFamilyForTrackKey(key);
     // Priority: startup (2.5 s) > sector change (1.8 s) > normal (600 ms).
-    final fadeInSteps = isStartup ? 62
-        : (oldFamily != null && oldFamily != newFamily) ? 45
-        : 15;
+    final fadeInSteps = isStartup
+        ? 62
+        : (oldFamily != null && oldFamily != newFamily)
+            ? 45
+            : 15;
 
     // Sector entry SFX — plays as the old music begins to fade out.
     // Skip on startup (no "entry" when the Archive first opens).
@@ -405,9 +540,11 @@ class AudioService with WidgetsBindingObserver {
       }
       final targetVol = _targetVolumeFor(key);
       // ignore: avoid_print
-      final fadeLabel = isStartup ? ' — startup'
-          : fadeInSteps > 15 ? ' — sector change'
-          : '';
+      final fadeLabel = isStartup
+          ? ' — startup'
+          : fadeInSteps > 15
+              ? ' — sector change'
+              : '';
       debugPrint(
         '[Audio] Playing "$key" → $asset '
         '(target vol ${targetVol.toStringAsFixed(2)}, '
@@ -463,7 +600,8 @@ class AudioService with WidgetsBindingObserver {
           await _backgroundPlayer.setAsset(oblivionAsset);
           await _backgroundPlayer.setLoopMode(LoopMode.one);
           // ignore: discarded_futures
-          _backgroundPlayer.play(); // fire-and-forget — see _crossfadeTo comment
+          _backgroundPlayer
+              .play(); // fire-and-forget — see _crossfadeTo comment
           await _rampVolume(0.3); // deliberately low — it is aftermath
           _currentAmbienceKey = 'oblivion';
         } catch (e) {
@@ -477,8 +615,9 @@ class AudioService with WidgetsBindingObserver {
   }
 
   Future<void> _enqueueAudioOperation(Future<void> Function() operation) {
-    _audioOperationQueue =
-        _audioOperationQueue.then((_) => operation()).catchError((error, stackTrace) {
+    _audioOperationQueue = _audioOperationQueue
+        .then((_) => operation())
+        .catchError((error, stackTrace) {
       // ignore: avoid_print
       print('Queued audio operation failed: $error\n$stackTrace');
     });
@@ -487,16 +626,21 @@ class AudioService with WidgetsBindingObserver {
 
   Future<void> _applyCurrentMix({double intensityOffset = 0.0}) async {
     final currentKey = _currentAmbienceKey;
-    if (currentKey == null || currentKey == 'silence' || !_isMusicEnabled) return;
-    await _rampVolume(_targetVolumeFor(currentKey, intensityOffset: intensityOffset));
+    if (currentKey == null || currentKey == 'silence' || !_isMusicEnabled) {
+      return;
+    }
+    await _rampVolume(
+        _targetVolumeFor(currentKey, intensityOffset: intensityOffset));
   }
 
   double _targetVolumeFor(String key, {double intensityOffset = 0.0}) {
     final musicScale = _musicVolumeScale;
     if (!_isMusicEnabled || musicScale <= 0) return 0.0;
-    final bias = AudioTrackCatalog.mixVolumeBiasForKey(key);
+    final bias = AudioTrackCatalog.mixVolumeBiasForKey(key) +
+        AudioTrackCatalog.mixVolumeBiasForNode(_currentNodeId);
     if (key == 'aria_goldberg') {
-      return ((_ariaGoldbergVolume + bias) * musicScale).clamp(0.0, _maxMixVolume);
+      return ((_ariaGoldbergVolume + bias) * musicScale)
+          .clamp(0.0, _maxMixVolume);
     }
     if (key == 'siciliano') return _sicilianoVolume * musicScale;
     if (key == 'oblivion') return _oblivionVolume * musicScale;
@@ -524,12 +668,13 @@ class AudioService with WidgetsBindingObserver {
 
   Future<void> _playBachSoftCue() async {
     await _enqueueBachCue(
-      _BachCue(
+      const _BachCue(
         key: 'aria_goldberg',
-        end: const Duration(milliseconds: 2300),
-        gain: 0.62,
+        start: Duration(milliseconds: 420),
+        end: Duration(milliseconds: 2960),
+        gain: 0.56,
         duckRatio: 0.22,
-        recoverDelay: const Duration(milliseconds: 800),
+        recoverDelay: Duration(milliseconds: 720),
       ),
     );
   }
@@ -539,12 +684,59 @@ class AudioService with WidgetsBindingObserver {
     await _enqueueBachCue(
       _BachCue(
         key: isHighAnxiety ? 'siciliano' : 'aria_goldberg',
-        end: const Duration(seconds: 8),
+        end: const Duration(milliseconds: 6800),
         gain: 0.84,
         duckRatio: 0.34,
-        recoverDelay: const Duration(milliseconds: 1450),
+        recoverDelay: const Duration(milliseconds: 1280),
       ),
     );
+  }
+
+  Future<void> _playPreviewClosureTrack() async {
+    const key = 'aria_goldberg';
+    final asset = AudioTrackCatalog.assetForKey(key);
+    if (asset == null || !await _assetExists(asset)) return;
+
+    try {
+      _silenceEndingActive = false;
+      _isFirstTrack = false;
+
+      if (_currentAmbientKey != null && _ambientPlayer.playing) {
+        // Let the room recede instead of disappearing abruptly.
+        // ignore: discarded_futures
+        _fadeOutAmbientForPreviewClosure();
+      }
+
+      if (_backgroundPlayer.volume > 0.03) {
+        await _rampVolume(0.0, steps: 10, msPerStep: 50);
+      }
+
+      await _backgroundPlayer.stop();
+      await _backgroundPlayer.setAsset(asset);
+      await _backgroundPlayer.setLoopMode(LoopMode.one);
+      await _backgroundPlayer.setVolume(0.0);
+      await _resetMoodEffects();
+      _currentAmbienceKey = key;
+
+      // ignore: discarded_futures
+      _backgroundPlayer.play();
+      await _rampVolume(
+        (_targetVolumeFor(key) + _previewClosureGoldbergLift)
+            .clamp(0.0, _maxMixVolume),
+        steps: 30,
+        msPerStep: 170,
+      );
+    } catch (e) {
+      // ignore: avoid_print
+      print('[Audio] Preview closure track failed: $e');
+    }
+  }
+
+  Future<void> _fadeOutAmbientForPreviewClosure() async {
+    await _rampAmbientVolume(0.0, steps: 20, msPerStep: 110);
+    await _ambientPlayer.stop();
+    await _ambientPlayer.setVolume(0.0);
+    _currentAmbientKey = null;
   }
 
   Future<void> _enqueueBachCue(_BachCue cue) async {
@@ -572,29 +764,34 @@ class AudioService with WidgetsBindingObserver {
     if (asset == null || !await _assetExists(asset)) return;
 
     try {
-      final canDuckAmbient = _currentAmbientKey != null && _ambientPlayer.playing;
+      final canDuckAmbient =
+          _currentAmbientKey != null && _ambientPlayer.playing;
       if (canDuckAmbient) {
         final ducked = (_ambientPlayer.volume * cue.duckRatio).clamp(0.0, 0.16);
         await _rampAmbientVolume(ducked, steps: 5, msPerStep: 28);
       }
       await _rewardPlayer.stop();
       await _rewardPlayer.setAsset(asset);
-      await _rewardPlayer.setVolume((cue.gain * _musicVolumeScale).clamp(0.0, 1.0));
+      await _rewardPlayer.setVolume(0.0);
       await _rewardPlayer.setClip(
-        start: Duration.zero,
+        start: cue.start,
         end: cue.end,
       );
-      await _rewardPlayer.play();
+      // ignore: discarded_futures
+      _rewardPlayer.play();
+      final targetGain = (cue.gain * _musicVolumeScale).clamp(0.0, 1.0);
+      await _rampRewardVolume(targetGain);
       await _rewardPlayer.playerStateStream.firstWhere(
         (state) => state.processingState == ProcessingState.completed,
       );
       if (canDuckAmbient) {
         await Future.delayed(cue.recoverDelay);
         if (_isMusicEnabled && _currentAmbientKey != null) {
-          final intensity = ((_lastProfile?.oblivionLevel ?? 0) / 100)
-              .clamp(0.0, 1.0);
-          final target = ((_ambientVolume + intensity * 0.25) * _musicVolumeScale)
-              .clamp(0.0, 0.60);
+          final intensity =
+              ((_lastProfile?.oblivionLevel ?? 0) / 100).clamp(0.0, 1.0);
+          final target =
+              ((_ambientVolume + intensity * 0.25) * _musicVolumeScale)
+                  .clamp(0.0, 0.60);
           await _rampAmbientVolume(target, steps: 12, msPerStep: 38);
         }
       }
@@ -606,13 +803,97 @@ class AudioService with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _playTitleCueInternal() async {
+    const key = 'title_soglia';
+    final asset = AudioTrackCatalog.assetForKey(key);
+    if (asset == null || !await _assetExists(asset)) return;
+
+    try {
+      await _rewardPlayer.stop();
+      if (!_titleCuePrepared) {
+        await _rewardPlayer.setAsset(asset);
+      }
+      await _rewardPlayer.setVolume(0.0);
+      await _rewardPlayer.setClip(
+        start: const Duration(milliseconds: 420),
+        end: const Duration(milliseconds: 18000),
+      );
+      _titleCuePlaying = true;
+      // ignore: discarded_futures
+      _rewardPlayer.play();
+      _rewardPlayer.playerStateStream
+          .firstWhere(
+        (state) => state.processingState == ProcessingState.completed,
+      )
+          .then((_) {
+        if (!_gameplayAudioUnlocked && _titleCuePlaying) {
+          _titleCuePlaying = false;
+          // ignore: discarded_futures
+          _startTitleAmbientBed();
+        }
+      });
+      await _rampRewardVolume(
+        (0.48 * _musicVolumeScale).clamp(0.0, 0.58),
+        steps: 24,
+        msPerStep: 90,
+      );
+    } catch (e) {
+      // ignore: avoid_print
+      print('[Audio] Title cue failed: $e');
+    }
+  }
+
+  Future<void> _rampRewardVolume(double target,
+      {int steps = 8, int msPerStep = 60}) async {
+    _rewardRampGeneration++;
+    final generation = _rewardRampGeneration;
+    final current = _rewardPlayer.volume;
+    final delta = (target - current) / steps;
+    for (int i = 0; i < steps; i++) {
+      await Future.delayed(Duration(milliseconds: msPerStep));
+      if (_rewardRampGeneration != generation) return;
+      final next = (current + delta * (i + 1)).clamp(0.0, 1.0);
+      await _rewardPlayer.setVolume(next);
+    }
+  }
+
+  Future<void> _startTitleAmbientBed() async {
+    const ambientKey = 'ambient_soglia';
+    if (_gameplayAudioUnlocked || !_isMusicEnabled) return;
+    final asset = AudioTrackCatalog.assetForKey(ambientKey);
+    if (asset == null || !await _assetExists(asset)) return;
+    if (_currentAmbientKey == ambientKey && _ambientPlayer.playing) return;
+
+    try {
+      if (_ambientPlayer.volume > 0.02) {
+        await _rampAmbientVolume(0.0, steps: 10, msPerStep: 45);
+      }
+      await _ambientPlayer.stop();
+      await _ambientPlayer.setAsset(asset);
+      await _ambientPlayer.setLoopMode(LoopMode.one);
+      _currentAmbientKey = ambientKey;
+      // ignore: discarded_futures
+      _ambientPlayer.play();
+      await _rampAmbientVolume(
+        (_ambientVolume * _musicVolumeScale * 0.72).clamp(0.0, 0.24),
+        steps: 24,
+        msPerStep: 85,
+      );
+    } catch (e) {
+      // ignore: avoid_print
+      print('[Audio] Title ambient failed: $e');
+    }
+  }
+
   bool get _isMusicEnabled => (_lastSettings?.musicEnabled ?? true);
 
-  double get _musicVolumeScale => (_lastSettings?.musicVolume ?? 0.85).clamp(0.0, 1.0);
+  double get _musicVolumeScale =>
+      (_lastSettings?.musicVolume ?? 0.85).clamp(0.0, 1.0);
 
   bool get _isSfxEnabled => (_lastSettings?.sfxEnabled ?? true);
 
-  double get _sfxVolumeScale => (_lastSettings?.sfxVolume ?? 0.90).clamp(0.0, 1.0);
+  double get _sfxVolumeScale =>
+      (_lastSettings?.sfxVolume ?? 0.90).clamp(0.0, 1.0);
 
   Future<bool> _assetExists(String asset) async {
     if (_availableAssets.contains(asset)) return true;
@@ -667,6 +948,8 @@ class AudioService with WidgetsBindingObserver {
   /// Syncs the ambient layer for [nodeId]. Runs independently of the music
   /// queue — the two players never block each other.
   Future<void> _syncAmbientForNode(String nodeId) async {
+    if (!_gameplayAudioUnlocked) return;
+
     final sector = AudioTrackCatalog.sectorForNode(nodeId);
     final musicTrack = AudioTrackCatalog.trackForNode(nodeId);
     // Suppress ambient when the music track is already a special atmospheric cue
@@ -674,9 +957,8 @@ class AudioService with WidgetsBindingObserver {
     // provides its own atmosphere (memoria, la_zona).
     final suppressAmbient = musicTrack != null &&
         AudioTrackCatalog.specialTracks.contains(musicTrack);
-    final ambientKey = suppressAmbient
-        ? null
-        : AudioTrackCatalog.ambientKeyForSector(sector);
+    final ambientKey =
+        suppressAmbient ? null : AudioTrackCatalog.ambientKeyForSector(sector);
 
     if (ambientKey == null) {
       // Fade ambient out gracefully if it is playing.
@@ -700,18 +982,30 @@ class AudioService with WidgetsBindingObserver {
       if (_ambientPlayer.volume > 0.02) await _rampAmbientVolume(0.0);
       await _ambientPlayer.stop();
       await _ambientPlayer.setAsset(asset);
+      await _ambientPlayer.setLoopMode(LoopMode.one);
       // fire-and-forget — same reason as _backgroundPlayer.play()
       // ignore: discarded_futures
       _ambientPlayer.play();
       final sectorBias = switch (sector) {
-        'giardino' => 1.12, // wetter bed, more droplets-presence
-        'osservatorio' => 0.90, // lighter, airy metallic resonance
+        'soglia' => 0.72,
+        'giardino' => 0.72, // lighter water bed; no constant hiss under Bach
+        'osservatorio' => 0.88, // lighter, airy metallic resonance
+        _ => 1.0,
+      };
+      final nodeBias = switch (nodeId) {
+        'garden_fountain' => 1.0,
+        'garden_stelae' => 0.64,
+        'garden_grove' => 0.58,
+        'garden_alcove_pleasures' => 0.68,
+        'garden_alcove_pains' => 0.62,
         _ => 1.0,
       };
       final targetVol =
-          (_ambientVolume * _musicVolumeScale * sectorBias).clamp(0.0, 0.45);
+          (_ambientVolume * _musicVolumeScale * sectorBias * nodeBias)
+              .clamp(0.0, 0.45);
       // ignore: avoid_print
-      print('[Audio] Ambient "$ambientKey" → $asset (vol ${targetVol.toStringAsFixed(2)})');
+      print(
+          '[Audio] Ambient "$ambientKey" → $asset (vol ${targetVol.toStringAsFixed(2)})');
       await _rampAmbientVolume(targetVol);
       _currentAmbientKey = ambientKey;
     } catch (e) {
@@ -726,26 +1020,23 @@ class AudioService with WidgetsBindingObserver {
   /// replayed per character — so no AudioPlayer leak during long narratives.
   ///
   /// Asset preference: `sfx_typewriter_tick.ogg` (add for best results) → falls
-  /// back to `sfx_proustian_trigger.ogg` (existing) → silent if both missing.
+  /// back to silence if the dedicated tick asset is missing.
   Future<void> playTypewriterTick() async {
     if (!_isSfxEnabled || _sfxVolumeScale <= 0) return;
     if (_typewriterPlayerLoading) return; // skip ticks during one-time setup
 
     if (!_typewriterPlayerLoaded) {
       _typewriterPlayerLoading = true;
-      const primary  = 'assets/audio/sfx_typewriter_tick.ogg';
-      const fallback = 'assets/audio/sfx_proustian_trigger.ogg';
-      final asset = await _assetExists(primary)  ? primary
-                  : await _assetExists(fallback) ? fallback
-                  : null;
+      const primary = 'assets/audio/sfx_typewriter_tick.ogg';
+      final asset = await _assetExists(primary) ? primary : null;
       if (asset != null) {
         try {
           await _typewriterPlayer.setAsset(asset);
           // Volume set once at load time; not repeated on every tick.
-          await _typewriterPlayer.setVolume(
-              (0.08 * _sfxVolumeScale).clamp(0.0, 0.12));
+          await _typewriterPlayer
+              .setVolume((0.08 * _sfxVolumeScale).clamp(0.0, 0.12));
           _typewriterPlayerLoaded = true;
-        } catch (_) { /* silently degrade */ }
+        } catch (_) {/* silently degrade */}
       }
       _typewriterPlayerLoading = false;
       if (!_typewriterPlayerLoaded) return;
@@ -765,7 +1056,7 @@ class AudioService with WidgetsBindingObserver {
       // fire-and-forget — completes when the short clip ends (no LoopMode).
       // ignore: discarded_futures
       _typewriterPlayer.play();
-    } catch (_) { /* silently degrade */ }
+    } catch (_) {/* silently degrade */}
   }
 
   /// Plays a one-shot SFX at [speed] (default 1.0).
@@ -816,7 +1107,8 @@ class AudioService with WidgetsBindingObserver {
       });
     } else if (state == AppLifecycleState.resumed) {
       _enqueueAudioOperation(() async {
-        if (_isMusicEnabled && _currentAmbienceKey != null &&
+        if (_isMusicEnabled &&
+            _currentAmbienceKey != null &&
             _currentAmbienceKey != 'silence') {
           // ignore: discarded_futures
           _backgroundPlayer.play();
@@ -843,6 +1135,7 @@ class AudioService with WidgetsBindingObserver {
 
 class _BachCue {
   final String key;
+  final Duration start;
   final Duration end;
   final double gain;
   final double duckRatio;
@@ -850,6 +1143,7 @@ class _BachCue {
 
   const _BachCue({
     required this.key,
+    this.start = Duration.zero,
     required this.end,
     required this.gain,
     required this.duckRatio,

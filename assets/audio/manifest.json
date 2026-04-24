@@ -11,25 +11,25 @@
       "key": "ambient_soglia",
       "asset": "assets/audio/ambient_soglia_air.ogg",
       "status": "ready",
-      "source": "Local ffmpeg-built ambience collage (breathing air, hollow room resonance, low drone, faint shimmer)",
+      "source": "Local ffmpeg-built ambience collage (hollow air, restrained low resonance, sparse glass tintinnabulation)",
       "license": "Repository-generated / lawful original synthesis",
-      "duration_s": 96.0
+      "duration_s": 180.0
     },
     {
       "key": "ambient_giardino",
       "asset": "assets/audio/ambient_giardino_water.ogg",
       "status": "ready",
-      "source": "Local ffmpeg-built ambience collage (water-like filtered noise, sparse droplets, airy rustle, restrained minimal pad)",
+      "source": "Local ffmpeg-built ambience collage (water bed, sparse droplets, leaf-rustle air, faint bell-like glints)",
       "license": "Repository-generated / lawful original synthesis",
-      "duration_s": 96.0
+      "duration_s": 180.0
     },
     {
       "key": "ambient_osservatorio",
       "asset": "assets/audio/ambient_osservatorio_metal.ogg",
       "status": "ready",
-      "source": "Local ffmpeg-built ambience collage (airy friction, distant metallic resonances, low drone, faint minimal pad)",
+      "source": "Local ffmpeg-built ambience collage (airy friction, low resonance, distant metal strikes and ringing tails)",
       "license": "Repository-generated / lawful original synthesis",
-      "duration_s": 96.0
+      "duration_s": 180.0
     },
     {
       "key": "soglia",
@@ -211,6 +211,7 @@
   "notes": [
     "All 22 shipped music cues now use curated CC0 piano masters by Kimiko Ishizaka, including the local proustian_trigger excerpt derived from the Goldberg Aria.",
     "Primary source pools: Open Well-Tempered Clavier and Open Goldberg Variations.",
+    "Preview ambience beds can be regenerated locally with tools/build_preview_ambience.py.",
     "Legacy synthesis tooling remains in the repository for experimentation and fallback regeneration: FluidSynth 2.x + FluidR3_GM with music21 corpus scores.",
     "Track provenance is recorded in assets/audio/ATTRIBUTION.md."
   ]
