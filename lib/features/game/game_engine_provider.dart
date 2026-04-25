@@ -497,32 +497,6 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     return fallback;
   }
 
-  EngineResponse _simulacrumReward({
-    required String narrativeText,
-    required String itemName,
-    required String completePuzzle,
-    int? lucidityDelta,
-    int? anxietyDelta,
-    int? oblivionDelta,
-    bool clearInventoryOnDeposit = false,
-  }) {
-    return EngineResponse(
-      narrativeText:
-          '$narrativeText\n\n✦ You have recovered $itemName. The Archive marks the moment.',
-      needsDemiurge: true,
-      lucidityDelta: lucidityDelta,
-      anxietyDelta: anxietyDelta,
-      oblivionDelta: oblivionDelta,
-      audioTrigger: 'simulacrum',
-      grantItem: itemName,
-      completePuzzle: completePuzzle,
-      clearInventoryOnDeposit: clearInventoryOnDeposit,
-      feedbackKind: FeedbackKind.simulacrumFound,
-      revealMode: TextRevealMode.wordByWord,
-      preDisplayPause: const Duration(milliseconds: 1200),
-    );
-  }
-
   FeedbackKind _feedbackKindForResponse({
     required EngineResponse response,
     required String currentNodeId,
@@ -571,8 +545,11 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     if (feedbackKind == FeedbackKind.finaleThreshold) {
       return TextRevealMode.wordByWord;
     }
-    if (cmd.verb == CommandVerb.unknown && response.needsDemiurge) {
+    if (cmd.verb == CommandVerb.examine) {
       return TextRevealMode.instant;
+    }
+    if (cmd.verb == CommandVerb.unknown && response.needsDemiurge) {
+      return TextRevealMode.slow;
     }
     return TextRevealMode.typewriter;
   }
@@ -581,8 +558,9 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     required EngineResponse response,
     required FeedbackKind feedbackKind,
   }) {
-    if (response.preDisplayPause != Duration.zero)
+    if (response.preDisplayPause != Duration.zero) {
       return response.preDisplayPause;
+    }
     switch (feedbackKind) {
       case FeedbackKind.solvedPuzzle:
         return const Duration(milliseconds: 500);
@@ -763,8 +741,9 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
       final Map<String, int> newCounters =
           Map<String, int>.from(withPlayer.puzzleCounters);
 
-      if (response.completePuzzle != null)
+      if (response.completePuzzle != null) {
         newPuzzles.add(response.completePuzzle!);
+      }
       if (response.incrementCounter != null) {
         newCounters[response.incrementCounter!] =
             (newCounters[response.incrementCounter!] ?? 0) + 1;
@@ -1018,6 +997,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
                   role: MessageRole.narrative,
                   revealMode: revealMode,
                   feedbackKind: feedbackKind,
+                  isDemiurge: response.needsDemiurge,
                 )
               ],
               screenResetCount: current.screenResetCount + 1,
@@ -1029,6 +1009,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
                 role: MessageRole.narrative,
                 revealMode: revealMode,
                 feedbackKind: feedbackKind,
+                isDemiurge: response.needsDemiurge,
               ),
             );
       if (response.audioTrigger == 'simulacrum') {
@@ -1191,11 +1172,6 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
 
       case CommandVerb.unknown:
         return _handleUnknown(cmd, nodeId, s);
-
-      default:
-        return const EngineResponse(
-          narrativeText: 'Nothing happens. Perhaps the moment has not come.',
-        );
     }
   }
 
@@ -1235,8 +1211,9 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
         .where((e) => e.key.contains(target) || target.contains(e.key))
         .map((e) => e.value)
         .firstOrNull;
-    if (match != null)
+    if (match != null) {
       return EngineResponse(narrativeText: match, needsDemiurge: true);
+    }
     return const EngineResponse(
         narrativeText: 'You observe it closely. It offers nothing new.');
   }
@@ -1384,8 +1361,9 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     );
     if (sectorResponse != null) return sectorResponse;
 
-    if (cmd.args.isEmpty)
+    if (cmd.args.isEmpty) {
       return const EngineResponse(narrativeText: 'Take what?');
+    }
     final target = cmd.args.join(' ');
 
     // Takeable objects (+1 weight)
@@ -1427,15 +1405,17 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
         _routeSectorCommand(cmd: cmd, nodeId: nodeId, state: s);
     if (sectorResponse != null) return sectorResponse;
 
-    if (cmd.args.isEmpty)
+    if (cmd.args.isEmpty) {
       return const EngineResponse(narrativeText: 'Drop what?');
+    }
     final target = cmd.args.join(' ');
 
     final match = s.inventory
         .where((i) => i.contains(target) || target.contains(i))
         .firstOrNull;
-    if (match == null)
+    if (match == null) {
       return const EngineResponse(narrativeText: 'You are not carrying that.');
+    }
     if (match == 'notebook') {
       return const EngineResponse(
         narrativeText: 'The notebook resists your hand.\n\n'
@@ -2011,8 +1991,9 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     final raw = _hintTextForNode(nodeId, 1, engineState).trim();
     final body =
         raw.contains('\n\n') ? raw.split('\n\n').skip(1).join(' ').trim() : raw;
-    if (body.isEmpty)
+    if (body.isEmpty) {
       return 'Listen to the room, then act on the first concrete verb.';
+    }
     return body;
   }
 
@@ -2867,11 +2848,13 @@ String gameSectorLabel(String nodeId) {
   }
   if (nodeId.startsWith('garden')) return 'Garden';
   if (nodeId.startsWith('obs_')) return 'Observatory';
-  if (nodeId.startsWith('gal_') || nodeId.startsWith('gallery_'))
+  if (nodeId.startsWith('gal_') || nodeId.startsWith('gallery_')) {
     return 'Gallery';
+  }
   if (nodeId.startsWith('lab_')) return 'Laboratory';
-  if (nodeId.startsWith('quinto_') || nodeId.startsWith('memory_'))
+  if (nodeId.startsWith('quinto_') || nodeId.startsWith('memory_')) {
     return 'Memory';
+  }
   if (nodeId.startsWith('finale_') || nodeId == 'il_nucleo') return 'Finale';
   if (nodeId == 'la_zona') return 'Zone';
   return 'Archive';

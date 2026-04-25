@@ -11,7 +11,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:math' show min;
+import 'dart:math' show min, pi, sin;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -46,12 +46,6 @@ const String _walkthroughUnlockCommand = 'Stalker4598!TarkoS?';
 
 // ── Finale helpers ────────────────────────────────────────────────────────────
 enum _FinaleType { acceptance, oblivion, eternalZone, testimony }
-
-bool _isFinaleNode(String nodeId) =>
-    nodeId == 'finale_acceptance' ||
-    nodeId == 'finale_oblivion' ||
-    nodeId == 'finale_eternal_zone' ||
-    nodeId == 'finale_testimony';
 
 _FinaleType? _finaleTypeFor(String nodeId) {
   switch (nodeId) {
@@ -184,6 +178,8 @@ final FocusNode gameCommandFocusNode = FocusNode(
   debugLabel: 'game-command-input',
 );
 
+enum TypewriterTextSpeed { slow, normal, instant }
+
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
 
@@ -197,14 +193,12 @@ class _GameScreenState extends ConsumerState<GameScreen>
   final _scrollController = ScrollController();
   final _focusNode = gameCommandFocusNode;
 
-  // Typewriter state for the last narrative message
-  String _typewriterBuffer = '';
-  int _typewriterIndex = 0;
+  // Typewriter state for the last narrative message.
   bool _typewriterRunning = false;
   String? _typewriterTarget;
-  List<String> _revealUnits = const [];
   TextRevealMode _activeRevealMode = TextRevealMode.typewriter;
-  Timer? _typewriterTimer;
+  bool _revealAllTypewriterText = false;
+  final _inputShakeKey = GlobalKey<_InputShakeWrapperState>();
   Timer? _backgroundFlashTimer;
   Timer? _successBloomTimer;
   Timer? _briefDimTimer;
@@ -293,7 +287,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _typewriterTimer?.cancel();
     _backgroundFlashTimer?.cancel();
     _successBloomTimer?.cancel();
     _briefDimTimer?.cancel();
@@ -399,20 +392,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
   // ── Typewriter ──────────────────────────────────────────────────────────
 
-  List<String> _buildRevealUnits(String text, TextRevealMode mode) {
-    switch (mode) {
-      case TextRevealMode.wordByWord:
-        return RegExp(r'\S+\s*|\n')
-            .allMatches(text)
-            .map((m) => m.group(0)!)
-            .toList();
-      case TextRevealMode.typewriter:
-      case TextRevealMode.slow:
-      case TextRevealMode.instant:
-        return text.split('');
-    }
-  }
-
   void _triggerBriefDim() {
     _briefDimTimer?.cancel();
     setState(() => _briefDimActive = true);
@@ -435,9 +414,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
     final text = message.text;
     final mode = message.revealMode;
     final settings = ref.read(appSettingsProvider).valueOrNull;
-    final currentNode =
-        ref.read(gameStateProvider).valueOrNull?.currentNode ?? '';
-    final onboardingBoost = _shouldBoostOnboardingTypewriter(currentNode);
     if (message.feedbackKind == FeedbackKind.sectorTransition) {
       _triggerSectorTransitionFade();
     } else if (message.feedbackKind == FeedbackKind.demiurgeError) {
@@ -446,11 +422,9 @@ class _GameScreenState extends ConsumerState<GameScreen>
     if (settings?.instantText ?? false || mode == TextRevealMode.instant) {
       setState(() {
         _typewriterTarget = text;
-        _typewriterBuffer = text;
-        _typewriterIndex = text.length;
         _typewriterRunning = false;
         _activeRevealMode = TextRevealMode.instant;
-        _revealUnits = const [];
+        _revealAllTypewriterText = true;
       });
       return;
     }
@@ -459,102 +433,50 @@ class _GameScreenState extends ConsumerState<GameScreen>
         _activeRevealMode == mode) {
       return;
     }
-    final units = _buildRevealUnits(text, mode);
-    _typewriterTarget = text;
-    _activeRevealMode = mode;
-    _revealUnits = units;
-    if (mode == TextRevealMode.typewriter &&
-        onboardingBoost &&
-        text.length > 24) {
-      final seedChars = min(22, text.length);
-      _typewriterBuffer = text.substring(0, seedChars);
-      _typewriterIndex = seedChars;
-    } else {
-      _typewriterBuffer = '';
-      _typewriterIndex = 0;
-    }
-    _typewriterRunning = true;
-    _tickTypewriter();
-  }
-
-  void _tickTypewriter() {
-    if (!_typewriterRunning || _typewriterTarget == null) return;
-    if (_typewriterIndex >= _revealUnits.length) {
-      setState(() => _typewriterRunning = false);
-      return;
-    }
-    final unit = _revealUnits[_typewriterIndex];
-    final settings = ref.read(appSettingsProvider).valueOrNull;
-    final currentNode =
-        ref.read(gameStateProvider).valueOrNull?.currentNode ?? '';
-    final onboardingBoost = _shouldBoostOnboardingTypewriter(currentNode);
-    final tunedDelay =
-        (((settings?.typewriterMillis ?? 30) * 1.25).round()).clamp(12, 60);
-    final baseDelay = _activeRevealMode == TextRevealMode.wordByWord
-        ? 200
-        : _activeRevealMode == TextRevealMode.slow
-            ? 90
-            : _isFinaleNode(currentNode)
-                ? 170
-                : onboardingBoost
-                    ? (tunedDelay * 0.62).round().clamp(8, 28)
-                    : tunedDelay;
-    final delay = (unit == ' ' || unit == '\n')
-        ? onboardingBoost
-            ? (baseDelay ~/ 3).clamp(3, 14)
-            : (baseDelay ~/ 2).clamp(4, 20)
-        : baseDelay;
-
-    _typewriterTimer?.cancel();
-    _typewriterTimer = Timer(Duration(milliseconds: delay), () {
-      if (!mounted || _typewriterTarget == null) return;
-      setState(() {
-        _typewriterBuffer += unit;
-        _typewriterIndex++;
-      });
-      // Rhythmic haptic: every 3rd character only (post-increment index divisible
-      // by 3) so it feels like a physical keystroke rhythm, not a buzz.
-      // Speed scaling: slow pace (≥28 ms/char) → mediumImpact; faster → lightImpact.
-      // Skipped entirely when reduceMotion is on.
-      if (_activeRevealMode == TextRevealMode.typewriter &&
-          _typewriterIndex % 3 == 0 &&
-          (settings?.enableHaptics ?? true) &&
-          !(settings?.reduceMotion ?? false)) {
-        (baseDelay >= 28
-            ? HapticFeedback.mediumImpact
-            : HapticFeedback.lightImpact)();
-      }
-      // Typewriter click — fire-and-forget, very low volume (0.08×sfxScale).
-      // Uses a single cached AudioPlayer (seek+play), not a new instance per char.
-      // ignore: discarded_futures
-      if (_activeRevealMode == TextRevealMode.typewriter ||
-          _activeRevealMode == TextRevealMode.slow) {
-        AudioService().playTypewriterTick();
-      }
-      _scrollToBottom();
-      _tickTypewriter();
+    setState(() {
+      _typewriterTarget = text;
+      _activeRevealMode = mode;
+      _typewriterRunning = true;
+      _revealAllTypewriterText = false;
     });
-  }
-
-  bool _shouldBoostOnboardingTypewriter(String nodeId) {
-    if (_isFinaleNode(nodeId)) return false;
-    final engine = ref.read(gameEngineProvider).valueOrNull;
-    if (engine == null) return false;
-    final playerTurns =
-        engine.messages.where((m) => m.role == MessageRole.player).length;
-    return playerTurns <= 8;
   }
 
   void _skipTypewriter() {
     if (_typewriterRunning && _typewriterTarget != null) {
-      _typewriterTimer?.cancel();
       setState(() {
-        _typewriterBuffer = _typewriterTarget!;
-        _typewriterIndex = _typewriterTarget!.length;
         _typewriterRunning = false;
+        _revealAllTypewriterText = true;
       });
       _scrollToBottom();
     }
+  }
+
+  TypewriterTextSpeed _typewriterSpeedForMessage(GameMessage message) {
+    if (message.role != MessageRole.narrative) {
+      return TypewriterTextSpeed.instant;
+    }
+    if (message.revealMode == TextRevealMode.instant) {
+      return TypewriterTextSpeed.instant;
+    }
+    if (message.feedbackKind == FeedbackKind.demiurgeError ||
+        message.feedbackKind == FeedbackKind.demiurgeInterruption ||
+        message.isDemiurge ||
+        message.revealMode == TextRevealMode.slow ||
+        message.revealMode == TextRevealMode.wordByWord) {
+      return TypewriterTextSpeed.slow;
+    }
+    return TypewriterTextSpeed.normal;
+  }
+
+  double _oblivionOpacityForMessage({
+    required int index,
+    required int total,
+  }) {
+    final ageFromBottom = (total - 1) - index;
+    if (ageFromBottom <= 3) return 1.0;
+    final fadeSpan = (total - 4).clamp(1, 18).toDouble();
+    final faded = (ageFromBottom - 3).clamp(0, fadeSpan).toDouble() / fadeSpan;
+    return (1.0 - faded * 0.8).clamp(0.2, 1.0);
   }
 
   void _scrollToBottom() {
@@ -919,11 +841,15 @@ class _GameScreenState extends ConsumerState<GameScreen>
     final msgCount = engine.messages.length;
     if (msgCount > _lastObservedMessageCount) {
       final lastMsg = engine.messages.lastOrNull;
-      if (lastMsg?.role == MessageRole.error) {
+      final rejected = lastMsg?.role == MessageRole.error ||
+          lastMsg?.feedbackKind == FeedbackKind.demiurgeError;
+      if (rejected) {
         // ignore: discarded_futures
         AudioService().playCommandRejected();
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _triggerErrorHaptic();
+          if (!mounted) return;
+          _triggerErrorHaptic();
+          _inputShakeKey.currentState?.triggerShake();
         });
       }
     }
@@ -1387,19 +1313,41 @@ class _GameScreenState extends ConsumerState<GameScreen>
                                   final isLastNarrative = isLast &&
                                       msg.role == MessageRole.narrative;
 
-                                  // Display typewriter buffer for the last narrative message
-                                  final displayText = isLastNarrative
-                                      ? _typewriterBuffer
-                                      : msg.text;
+                                  final opacity = _oblivionOpacityForMessage(
+                                    index: index,
+                                    total: engine.messages.length,
+                                  );
 
-                                  return _MessageTile(
-                                    text: displayText,
-                                    role: msg.role,
-                                    narrativeColor: narrativeColor,
-                                    visualProfile: visualProfile,
-                                    showCursor:
-                                        isLastNarrative && _typewriterRunning,
-                                    textScale: textScale,
+                                  return Opacity(
+                                    opacity: opacity,
+                                    child: _MessageTile(
+                                      text: msg.text,
+                                      role: msg.role,
+                                      narrativeColor: narrativeColor,
+                                      visualProfile: visualProfile,
+                                      showCursor:
+                                          isLastNarrative && _typewriterRunning,
+                                      textScale: textScale,
+                                      typewriterSpeed: isLastNarrative
+                                          ? _typewriterSpeedForMessage(msg)
+                                          : TypewriterTextSpeed.instant,
+                                      revealAll: isLastNarrative
+                                          ? _revealAllTypewriterText
+                                          : true,
+                                      onRevealComplete: isLastNarrative
+                                          ? () {
+                                              if (mounted &&
+                                                  _typewriterRunning) {
+                                                setState(() {
+                                                  _typewriterRunning = false;
+                                                  _revealAllTypewriterText =
+                                                      true;
+                                                });
+                                              }
+                                              _scrollToBottom();
+                                            }
+                                          : null,
+                                    ),
                                   );
                                 },
                               ),
@@ -1422,26 +1370,29 @@ class _GameScreenState extends ConsumerState<GameScreen>
                     ),
 
                     // ── Input field ──────────────────────────────────────────
-                    _InputRow(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      onSubmit: _submit,
-                      onTextChanged: (value) {
-                        if (value.trim().isNotEmpty) {
-                          _startGameplayAudioFromInput();
-                        }
-                      },
-                      enabled: engine.phase == ParserPhase.idle,
-                      narrativeColor: narrativeColor,
-                      visualProfile: visualProfile,
-                      textScale: textScale,
-                      hintText: _inputHintForNode(currentNode),
-                      onRecallLast: lastCommand == null
-                          ? null
-                          : () =>
-                              _queueQuickCommand(lastCommand, submit: false),
-                      onWalkthroughNext:
-                          _walkthroughUnlocked ? _walkthroughNext : null,
+                    _InputShakeWrapper(
+                      key: _inputShakeKey,
+                      child: _InputRow(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        onSubmit: _submit,
+                        onTextChanged: (value) {
+                          if (value.trim().isNotEmpty) {
+                            _startGameplayAudioFromInput();
+                          }
+                        },
+                        enabled: engine.phase == ParserPhase.idle,
+                        narrativeColor: narrativeColor,
+                        visualProfile: visualProfile,
+                        textScale: textScale,
+                        hintText: _inputHintForNode(currentNode),
+                        onRecallLast: lastCommand == null
+                            ? null
+                            : () =>
+                                _queueQuickCommand(lastCommand, submit: false),
+                        onWalkthroughNext:
+                            _walkthroughUnlocked ? _walkthroughNext : null,
+                      ),
                     ),
 
                     const SizedBox(height: 8),
@@ -1905,6 +1856,9 @@ class _MessageTile extends StatelessWidget {
   final SectorVisualProfile visualProfile;
   final bool showCursor;
   final double textScale;
+  final TypewriterTextSpeed typewriterSpeed;
+  final bool revealAll;
+  final VoidCallback? onRevealComplete;
 
   const _MessageTile({
     required this.text,
@@ -1913,6 +1867,9 @@ class _MessageTile extends StatelessWidget {
     required this.visualProfile,
     this.showCursor = false,
     required this.textScale,
+    this.typewriterSpeed = TypewriterTextSpeed.instant,
+    this.revealAll = true,
+    this.onRevealComplete,
   });
 
   @override
@@ -1951,24 +1908,15 @@ class _MessageTile extends StatelessWidget {
       case MessageRole.narrative:
         return Padding(
           padding: const EdgeInsets.only(top: 6, bottom: 12),
-          child: RichText(
-            text: TextSpan(
-              text: text,
-              style: RitualTypography.narrative(
-                17 * textScale,
-                color: narrativeColor,
-              ),
-              children: showCursor
-                  ? [
-                      TextSpan(
-                        text: '▌',
-                        style: TextStyle(
-                          color: narrativeColor.withValues(alpha: 0.7),
-                          fontSize: 14 * textScale,
-                        ),
-                      )
-                    ]
-                  : null,
+          child: TypewriterTextWidget(
+            text: text,
+            speed: typewriterSpeed,
+            revealAll: revealAll,
+            showCursor: showCursor,
+            onComplete: onRevealComplete,
+            style: RitualTypography.narrative(
+              17 * textScale,
+              color: narrativeColor,
             ),
           ),
         );
@@ -1987,6 +1935,129 @@ class _MessageTile extends StatelessWidget {
           ),
         );
     }
+  }
+}
+
+class TypewriterTextWidget extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+  final TypewriterTextSpeed speed;
+  final bool revealAll;
+  final bool showCursor;
+  final VoidCallback? onComplete;
+
+  const TypewriterTextWidget({
+    super.key,
+    required this.text,
+    required this.style,
+    this.speed = TypewriterTextSpeed.normal,
+    this.revealAll = false,
+    this.showCursor = false,
+    this.onComplete,
+  });
+
+  @override
+  State<TypewriterTextWidget> createState() => _TypewriterTextWidgetState();
+}
+
+class _TypewriterTextWidgetState extends State<TypewriterTextWidget> {
+  Timer? _timer;
+  int _visibleCharacters = 0;
+  bool _completionReported = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _resetReveal();
+  }
+
+  @override
+  void didUpdateWidget(covariant TypewriterTextWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text ||
+        oldWidget.speed != widget.speed ||
+        oldWidget.revealAll != widget.revealAll) {
+      _resetReveal();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _resetReveal() {
+    _timer?.cancel();
+    _completionReported = false;
+
+    if (widget.revealAll || widget.speed == TypewriterTextSpeed.instant) {
+      _visibleCharacters = widget.text.length;
+      _reportComplete();
+      return;
+    }
+
+    _visibleCharacters = 0;
+    _scheduleNextCharacter();
+  }
+
+  void _scheduleNextCharacter() {
+    if (_visibleCharacters >= widget.text.length) {
+      _reportComplete();
+      return;
+    }
+
+    _timer = Timer(_delayForNextCharacter(), () {
+      if (!mounted) return;
+      setState(() {
+        _visibleCharacters = min(widget.text.length, _visibleCharacters + 1);
+      });
+      _scheduleNextCharacter();
+    });
+  }
+
+  Duration _delayForNextCharacter() {
+    final char = widget.text[_visibleCharacters];
+    final baseMilliseconds = switch (widget.speed) {
+      TypewriterTextSpeed.slow => 72,
+      TypewriterTextSpeed.normal => 26,
+      TypewriterTextSpeed.instant => 0,
+    };
+    final multiplier = (char == ' ' || char == '\n') ? 0.45 : 1.0;
+    return Duration(milliseconds: (baseMilliseconds * multiplier).round());
+  }
+
+  void _reportComplete() {
+    if (_completionReported) return;
+    _completionReported = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onComplete?.call();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleText = widget.text.substring(
+      0,
+      min(_visibleCharacters, widget.text.length),
+    );
+    return RichText(
+      text: TextSpan(
+        text: visibleText,
+        style: widget.style,
+        children: widget.showCursor
+            ? [
+                TextSpan(
+                  text: '▌',
+                  style: widget.style.copyWith(
+                    color: widget.style.color?.withValues(alpha: 0.7),
+                    fontSize: (widget.style.fontSize ?? 14) * 0.82,
+                  ),
+                ),
+              ]
+            : null,
+      ),
+    );
   }
 }
 
@@ -2477,6 +2548,41 @@ class _EpiphanyPopup extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _InputShakeWrapper extends StatefulWidget {
+  final Widget child;
+
+  const _InputShakeWrapper({super.key, required this.child});
+
+  @override
+  State<_InputShakeWrapper> createState() => _InputShakeWrapperState();
+}
+
+class _InputShakeWrapperState extends State<_InputShakeWrapper> {
+  int _shakeTick = 0;
+
+  void triggerShake() {
+    setState(() => _shakeTick++);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(_shakeTick),
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        final offset = sin(value * pi * 6) * (1 - value) * 7;
+        return Transform.translate(
+          offset: Offset(offset, 0),
+          child: child,
+        );
+      },
+      child: widget.child,
     );
   }
 }

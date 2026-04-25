@@ -169,12 +169,14 @@ class GameMessage {
   final MessageRole role;
   final TextRevealMode revealMode;
   final FeedbackKind feedbackKind;
+  final bool isDemiurge;
 
   const GameMessage({
     required this.text,
     required this.role,
     this.revealMode = TextRevealMode.typewriter,
     this.feedbackKind = FeedbackKind.minorResponse,
+    this.isDemiurge = false,
   });
 }
 
