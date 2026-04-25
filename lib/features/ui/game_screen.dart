@@ -206,6 +206,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   Timer? _sectorFadeTimer;
   Timer? _puzzleCueTimer;
   Timer? _revelationOverlayTimer;
+  Timer? _fragmentGlowTimer;
   Timer? _epiphanyPopupTimer;
   Timer? _firstBachUnlockTimer;
   bool _backgroundFlashActive = false;
@@ -219,6 +220,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   String _puzzleCueSubtitle = 'A hidden hinge yields.';
   String? _revelationOverlayTitle;
   String? _revelationOverlaySubtitle;
+  String? _activeFragmentGlowKey;
   String? _epiphanyTitle;
   String? _epiphanySubtitle;
   bool _lastObservedPuzzleSolved = false;
@@ -226,7 +228,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
   Set<String> _lastObservedCompletedPuzzles = const {};
   int _lastObservedPsychoShiftCount = 0;
   int _lastObservedMessageCount = 0;
-  int _lastObservedUnlockedMilestones = 0;
   int _epiphanyLineCursor = 0;
   String _lastObservedSectorLabel = '';
   // -1 = "not yet observed" so the very first build never fires a threshold haptic.
@@ -298,6 +299,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     _sectorFadeTimer?.cancel();
     _puzzleCueTimer?.cancel();
     _revelationOverlayTimer?.cancel();
+    _fragmentGlowTimer?.cancel();
     _epiphanyPopupTimer?.cancel();
     _firstBachUnlockTimer?.cancel();
     _controller.dispose();
@@ -742,25 +744,42 @@ class _GameScreenState extends ConsumerState<GameScreen>
     return line;
   }
 
-  int _unlockedMilestonesCount(Set<String> completedPuzzles) =>
-      _progressMilestones.where((m) => completedPuzzles.contains(m.key)).length;
+  Set<String> _milestoneKeysIn(Set<String> completedPuzzles) =>
+      _progressMilestones
+          .where((m) => completedPuzzles.contains(m.key))
+          .map((m) => m.key)
+          .toSet();
 
-  void _consumeMilestoneReveal(Set<String> completedPuzzles) {
-    final unlocked = _unlockedMilestonesCount(completedPuzzles);
-    if (unlocked > _lastObservedUnlockedMilestones &&
-        unlocked <= _progressMilestones.length) {
-      final unlockedMilestone = _progressMilestones[unlocked - 1];
+  void _consumeMilestoneRevealFromRiverpod({
+    required Set<String> previousPuzzles,
+    required Set<String> currentPuzzles,
+  }) {
+    final previous = _milestoneKeysIn(previousPuzzles);
+    final current = _milestoneKeysIn(currentPuzzles);
+    final newlyUnlocked = current.difference(previous);
+    if (newlyUnlocked.isEmpty) return;
+
+    final unlockedMilestone = _progressMilestones
+        .where((m) => newlyUnlocked.contains(m.key))
+        .firstOrNull;
+    if (unlockedMilestone != null) {
       final line = _nextEpiphanyLine();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _showRevelationOverlay(
-          title: '${unlockedMilestone.label} Revealed',
-          subtitle: '${line.subtitle} · ${unlockedMilestone.trackTitle}',
-          playRewardBach: true,
-        );
-      });
+      _pulseFragmentDot(unlockedMilestone.key);
+      _showRevelationOverlay(
+        title: '${unlockedMilestone.label} Revealed',
+        subtitle: '${line.subtitle} · ${unlockedMilestone.trackTitle}',
+        playRewardBach: true,
+      );
     }
-    _lastObservedUnlockedMilestones = unlocked;
+  }
+
+  void _pulseFragmentDot(String milestoneKey) {
+    _fragmentGlowTimer?.cancel();
+    setState(() => _activeFragmentGlowKey = milestoneKey);
+    _fragmentGlowTimer = Timer(const Duration(milliseconds: 950), () {
+      if (!mounted) return;
+      setState(() => _activeFragmentGlowKey = null);
+    });
   }
 
   _PuzzleCueCopy _puzzleCueCopyFor({
@@ -1179,6 +1198,17 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<GameEngineState>>(gameEngineProvider,
+        (previous, next) {
+      final previousPuzzles = previous?.valueOrNull?.completedPuzzles;
+      final currentPuzzles = next.valueOrNull?.completedPuzzles;
+      if (previousPuzzles == null || currentPuzzles == null) return;
+      _consumeMilestoneRevealFromRiverpod(
+        previousPuzzles: previousPuzzles,
+        currentPuzzles: currentPuzzles,
+      );
+    });
+
     final engineAsync = ref.watch(gameEngineProvider);
     final psychoAsync = ref.watch(psychoProfileProvider);
     final gameStateAsync = ref.watch(gameStateProvider);
@@ -1302,7 +1332,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
               ),
               data: (engine) {
                 _consumeFeedbackSignals(engine, currentNode);
-                _consumeMilestoneReveal(engine.completedPuzzles);
                 _consumeSectorChange(currentNode);
                 // Detect the WAKE UP epilogue text to trigger white-screen fade.
                 final lastMsg = engine.messages.lastOrNull;
@@ -1453,6 +1482,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                       weight: engine.psychoWeight,
                       itemCount: engine.inventory.length,
                       completedPuzzles: engine.completedPuzzles,
+                      activeFragmentGlowKey: _activeFragmentGlowKey,
                       profile: profile,
                       color: effectiveNarrativeColor.withValues(alpha: 0.72),
                       visualProfile: visualProfile,
@@ -2345,6 +2375,7 @@ class _StatusBar extends StatelessWidget {
   final int weight;
   final int itemCount;
   final Set<String> completedPuzzles;
+  final String? activeFragmentGlowKey;
   final PsychoProfile? profile;
   final Color color;
   final SectorVisualProfile visualProfile;
@@ -2355,6 +2386,7 @@ class _StatusBar extends StatelessWidget {
     required this.weight,
     required this.itemCount,
     required this.completedPuzzles,
+    required this.activeFragmentGlowKey,
     required this.profile,
     required this.color,
     required this.visualProfile,
@@ -2417,6 +2449,7 @@ class _StatusBar extends StatelessWidget {
             _ProgressConstellation(
               milestones: _progressMilestones,
               completedPuzzles: completedPuzzles,
+              activeFragmentGlowKey: activeFragmentGlowKey,
               visualProfile: visualProfile,
             ),
           ],
@@ -2429,11 +2462,13 @@ class _StatusBar extends StatelessWidget {
 class _ProgressConstellation extends StatelessWidget {
   final List<_ProgressMilestone> milestones;
   final Set<String> completedPuzzles;
+  final String? activeFragmentGlowKey;
   final SectorVisualProfile visualProfile;
 
   const _ProgressConstellation({
     required this.milestones,
     required this.completedPuzzles,
+    required this.activeFragmentGlowKey,
     required this.visualProfile,
   });
 
@@ -2461,6 +2496,7 @@ class _ProgressConstellation extends StatelessWidget {
                   index: i + 1,
                   milestone: milestones[i],
                   unlocked: completedPuzzles.contains(milestones[i].key),
+                  justUnlocked: activeFragmentGlowKey == milestones[i].key,
                   visualProfile: visualProfile,
                 ),
             ],
@@ -2475,12 +2511,14 @@ class _ProgressDot extends StatelessWidget {
   final int index;
   final _ProgressMilestone milestone;
   final bool unlocked;
+  final bool justUnlocked;
   final SectorVisualProfile visualProfile;
 
   const _ProgressDot({
     required this.index,
     required this.milestone,
     required this.unlocked,
+    required this.justUnlocked,
     required this.visualProfile,
   });
 
@@ -2493,48 +2531,77 @@ class _ProgressDot extends StatelessWidget {
         ? visualProfile.accent.withValues(alpha: 0.95)
         : visualProfile.frame.withValues(alpha: 0.55);
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () {
-        final messenger = ScaffoldMessenger.of(context);
-        messenger.clearSnackBars();
-        if (!unlocked) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text('Fragment $index not revealed yet.'),
-              duration: const Duration(milliseconds: 1200),
+    return TweenAnimationBuilder<double>(
+      key: ValueKey('${milestone.key}-$justUnlocked'),
+      tween: Tween(begin: 0, end: justUnlocked ? 1 : 0),
+      duration: justUnlocked
+          ? const Duration(milliseconds: 900)
+          : const Duration(milliseconds: 160),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        final pulse = justUnlocked ? sin(value * pi) : 0.0;
+        return Transform.scale(
+          scale: 1.0 + pulse * 0.38,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                if (unlocked || justUnlocked)
+                  BoxShadow(
+                    color: visualProfile.glow
+                        .withValues(alpha: 0.28 + pulse * 0.46),
+                    blurRadius: 8 + pulse * 22,
+                    spreadRadius: pulse * 4,
+                  ),
+              ],
             ),
-          );
-          return;
-        }
-        // ignore: discarded_futures
-        AudioService().handleTrigger('reward_bach');
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('${milestone.label}: ${milestone.trackTitle}'),
-            duration: const Duration(milliseconds: 1700),
+            child: child,
           ),
         );
       },
-      child: Tooltip(
-        message: unlocked
-            ? '${milestone.label} · ${milestone.trackTitle}'
-            : '${milestone.label} · locked',
-        child: Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: fill,
-            border: Border.all(color: border, width: 1.2),
-            boxShadow: unlocked
-                ? [
-                    BoxShadow(
-                      color: visualProfile.glow.withValues(alpha: 0.32),
-                      blurRadius: 8,
-                    ),
-                  ]
-                : null,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          final messenger = ScaffoldMessenger.of(context);
+          messenger.clearSnackBars();
+          if (!unlocked) {
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text('Fragment $index not revealed yet.'),
+                duration: const Duration(milliseconds: 1200),
+              ),
+            );
+            return;
+          }
+          // ignore: discarded_futures
+          AudioService().handleTrigger('reward_bach');
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text('${milestone.label}: ${milestone.trackTitle}'),
+              duration: const Duration(milliseconds: 1700),
+            ),
+          );
+        },
+        child: Tooltip(
+          message: unlocked
+              ? '${milestone.label} · ${milestone.trackTitle}'
+              : '${milestone.label} · locked',
+          child: Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: fill,
+              border: Border.all(color: border, width: 1.2),
+              boxShadow: unlocked
+                  ? [
+                      BoxShadow(
+                        color: visualProfile.glow.withValues(alpha: 0.32),
+                        blurRadius: 8,
+                      ),
+                    ]
+                  : null,
+            ),
           ),
         ),
       ),
