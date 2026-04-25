@@ -28,6 +28,7 @@ import 'archive_panels.dart';
 import '../audio/audio_service.dart';
 import 'background_service.dart';
 import 'ritual_style.dart';
+import '../parser/parser_service.dart';
 
 // PsychoProfile thresholds that drive the UI colour palette (mirror GDD section 6)
 const int _panicAnxietyThreshold = 70; // anxiety > this → reddish text
@@ -39,7 +40,7 @@ const Duration _backgroundFlashHoldDuration = Duration(milliseconds: 180);
 const Duration _successBloomHoldDuration = Duration(milliseconds: 540);
 const Duration _backgroundFadeDuration = Duration(milliseconds: 900);
 const Duration _puzzleCueHoldDuration = Duration(milliseconds: 1300);
-const Duration _simulacrumBannerDuration = Duration(milliseconds: 2200);
+const Duration _revelationOverlayDuration = Duration(milliseconds: 2500);
 const Duration _epiphanyPopupDuration = Duration(milliseconds: 2000);
 // Secret command that activates walkthrough mode (QA only, never persisted).
 const String _walkthroughUnlockCommand = 'Stalker4598!TarkoS?';
@@ -178,7 +179,7 @@ final FocusNode gameCommandFocusNode = FocusNode(
   debugLabel: 'game-command-input',
 );
 
-enum TypewriterTextSpeed { slow, normal, instant }
+enum TypewriterTextSpeed { slow, weighted, normal, instant }
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -204,7 +205,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   Timer? _briefDimTimer;
   Timer? _sectorFadeTimer;
   Timer? _puzzleCueTimer;
-  Timer? _simulacrumBannerTimer;
+  Timer? _revelationOverlayTimer;
   Timer? _epiphanyPopupTimer;
   Timer? _firstBachUnlockTimer;
   bool _backgroundFlashActive = false;
@@ -216,7 +217,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
   bool _puzzleCueActive = false;
   String _puzzleCueTitle = 'Puzzle resolved';
   String _puzzleCueSubtitle = 'A hidden hinge yields.';
-  String? _simulacrumBannerText;
+  String? _revelationOverlayTitle;
+  String? _revelationOverlaySubtitle;
   String? _epiphanyTitle;
   String? _epiphanySubtitle;
   bool _lastObservedPuzzleSolved = false;
@@ -295,7 +297,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     _briefDimTimer?.cancel();
     _sectorFadeTimer?.cancel();
     _puzzleCueTimer?.cancel();
-    _simulacrumBannerTimer?.cancel();
+    _revelationOverlayTimer?.cancel();
     _epiphanyPopupTimer?.cancel();
     _firstBachUnlockTimer?.cancel();
     _controller.dispose();
@@ -422,6 +424,14 @@ class _GameScreenState extends ConsumerState<GameScreen>
       _triggerSectorTransitionFade();
     } else if (message.feedbackKind == FeedbackKind.demiurgeError) {
       _triggerBriefDim();
+      setState(() {
+        _typewriterTarget = text;
+        _typewriterRunning = false;
+        _activeRevealMode = TextRevealMode.instant;
+        _revealAllTypewriterText = true;
+      });
+      _refocusCommandInput();
+      return;
     }
     if (settings?.instantText ?? false || mode == TextRevealMode.instant) {
       setState(() {
@@ -459,11 +469,17 @@ class _GameScreenState extends ConsumerState<GameScreen>
     if (message.role != MessageRole.narrative) {
       return TypewriterTextSpeed.instant;
     }
+    if (message.feedbackKind == FeedbackKind.demiurgeError) {
+      return TypewriterTextSpeed.instant;
+    }
     if (message.revealMode == TextRevealMode.instant) {
       return TypewriterTextSpeed.instant;
     }
-    if (message.feedbackKind == FeedbackKind.demiurgeError ||
-        message.feedbackKind == FeedbackKind.demiurgeInterruption ||
+    if (message.feedbackKind == FeedbackKind.solvedPuzzle ||
+        message.feedbackKind == FeedbackKind.simulacrumFound) {
+      return TypewriterTextSpeed.weighted;
+    }
+    if (message.feedbackKind == FeedbackKind.demiurgeInterruption ||
         message.isDemiurge ||
         message.feedbackKind == FeedbackKind.firstBachRevelation ||
         message.revealMode == TextRevealMode.slow ||
@@ -656,19 +672,37 @@ class _GameScreenState extends ConsumerState<GameScreen>
       words.add('${part[0].toUpperCase()}${part.substring(1)}');
     }
     final label = words.join(' ');
-    _simulacrumBannerTimer?.cancel();
     if (_hapticsOn()) HapticFeedback.mediumImpact();
-    // ignore: discarded_futures
-    AudioService().handleTrigger('reward_bach');
-    setState(() => _simulacrumBannerText = '✦ $label recovered');
     final line = _nextEpiphanyLine();
-    _showEpiphanyPopup(
-      title: '$label Recovered',
-      subtitle: line.subtitle,
+    _showRevelationOverlay(
+      title: label,
+      subtitle: 'Simulacrum recovered · ${line.subtitle}',
+      playRewardBach: true,
     );
-    _simulacrumBannerTimer = Timer(_simulacrumBannerDuration, () {
+  }
+
+  void _showRevelationOverlay({
+    required String title,
+    required String subtitle,
+    bool playRewardBach = false,
+  }) {
+    _revelationOverlayTimer?.cancel();
+    if (playRewardBach) {
+      // ignore: discarded_futures
+      AudioService().handleTrigger('reward_bach');
+    }
+    _focusNode.unfocus();
+    setState(() {
+      _revelationOverlayTitle = title;
+      _revelationOverlaySubtitle = subtitle;
+    });
+    _revelationOverlayTimer = Timer(_revelationOverlayDuration, () {
       if (!mounted) return;
-      setState(() => _simulacrumBannerText = null);
+      setState(() {
+        _revelationOverlayTitle = null;
+        _revelationOverlaySubtitle = null;
+      });
+      _refocusCommandInput();
     });
   }
 
@@ -719,9 +753,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
       final line = _nextEpiphanyLine();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        _showEpiphanyPopup(
+        _showRevelationOverlay(
           title: '${unlockedMilestone.label} Revealed',
           subtitle: '${line.subtitle} · ${unlockedMilestone.trackTitle}',
+          playRewardBach: true,
         );
       });
     }
@@ -879,6 +914,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
           if (!mounted) return;
           _triggerErrorHaptic();
           _inputShakeKey.currentState?.triggerShake();
+          _refocusCommandInput();
         });
       }
     }
@@ -977,8 +1013,19 @@ class _GameScreenState extends ConsumerState<GameScreen>
         setState(() => _walkthroughUnlocked = true);
         return;
       }
+      final parsed = ParserService.parse(text);
+      final parserAccepted = parsed.verb != CommandVerb.unknown;
+      if (parserAccepted) {
+        _inputShakeKey.currentState?.triggerAcceptedCommand();
+      }
       // Immediate "key press" feedback — fires before the engine processes the command.
-      if (_hapticsOn()) HapticFeedback.mediumImpact();
+      if (_hapticsOn()) {
+        if (parserAccepted) {
+          HapticFeedback.mediumImpact();
+        } else {
+          HapticFeedback.selectionClick();
+        }
+      }
       _controller.clear();
       _lastSubmittedCommand = text;
       // Add to history (skip duplicates of the most recent entry; cap at 30).
@@ -1359,8 +1406,12 @@ class _GameScreenState extends ConsumerState<GameScreen>
                                   return Opacity(
                                     opacity: opacity,
                                     child: _MessageTile(
+                                      key: ValueKey(
+                                        '${msg.role.name}-$index-${msg.text}',
+                                      ),
                                       text: msg.text,
                                       role: msg.role,
+                                      feedbackKind: msg.feedbackKind,
                                       narrativeColor: effectiveNarrativeColor,
                                       forceSerif: msg.feedbackKind ==
                                           FeedbackKind.firstBachRevelation,
@@ -1422,7 +1473,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
                           }
                         },
                         enabled: engine.phase == ParserPhase.idle &&
-                            !_firstBachInputLocked,
+                            !_firstBachInputLocked &&
+                            _revelationOverlayTitle == null,
                         narrativeColor: effectiveNarrativeColor,
                         visualProfile: visualProfile,
                         textScale: textScale,
@@ -1452,16 +1504,12 @@ class _GameScreenState extends ConsumerState<GameScreen>
                 ),
               ),
             ),
-            Positioned(
-              top: 18,
-              left: 20,
-              right: 20,
-              child: IgnorePointer(
-                child: _SimulacrumBanner(
-                  text: _simulacrumBannerText,
-                  visualProfile: visualProfile,
-                  reduceMotion: settings?.reduceMotion ?? false,
-                ),
+            Positioned.fill(
+              child: _RevelationOverlay(
+                title: _revelationOverlayTitle,
+                subtitle: _revelationOverlaySubtitle,
+                visualProfile: visualProfile,
+                reduceMotion: settings?.reduceMotion ?? false,
               ),
             ),
             Positioned(
@@ -1931,6 +1979,7 @@ class _SessionCard extends StatelessWidget {
 class _MessageTile extends StatelessWidget {
   final String text;
   final MessageRole role;
+  final FeedbackKind feedbackKind;
   final Color narrativeColor;
   final SectorVisualProfile visualProfile;
   final bool showCursor;
@@ -1941,8 +1990,10 @@ class _MessageTile extends StatelessWidget {
   final VoidCallback? onRevealComplete;
 
   const _MessageTile({
+    super.key,
     required this.text,
     required this.role,
+    required this.feedbackKind,
     required this.narrativeColor,
     required this.visualProfile,
     this.showCursor = false,
@@ -1962,31 +2013,47 @@ class _MessageTile extends StatelessWidget {
         final promptMatch = RegExp(r'^(>\s*)(.*)$').firstMatch(text);
         final promptGlyph = promptMatch?.group(1) ?? '';
         final commandText = promptMatch?.group(2) ?? text;
-        return Padding(
-          padding: const EdgeInsets.only(top: 16, bottom: 4),
-          child: RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: promptGlyph,
-                  style: RitualTypography.command(
-                    14 * textScale,
-                    color: Colors.white.withValues(alpha: 0.42),
+        return _PlayerCommandArrival(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 16, bottom: 4),
+            child: RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: promptGlyph,
+                    style: RitualTypography.command(
+                      14 * textScale,
+                      color: Colors.white.withValues(alpha: 0.42),
+                    ),
                   ),
-                ),
-                TextSpan(
-                  text: commandText,
-                  style: RitualTypography.command(
-                    14 * textScale,
-                    color: visualProfile.accent,
+                  TextSpan(
+                    text: commandText,
+                    style: RitualTypography.command(
+                      14 * textScale,
+                      color: visualProfile.accent,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
 
       case MessageRole.narrative:
+        if (feedbackKind == FeedbackKind.demiurgeError) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 12),
+            child: _DemiurgeErrorGlitch(
+              text,
+              textScale: textScale,
+            ),
+          );
+        }
+        final weighted = feedbackKind == FeedbackKind.solvedPuzzle ||
+            feedbackKind == FeedbackKind.simulacrumFound;
+        final responseColor = weighted
+            ? Color.lerp(narrativeColor, Colors.white, 0.22) ?? narrativeColor
+            : narrativeColor;
         return Padding(
           padding: const EdgeInsets.only(top: 6, bottom: 12),
           child: TypewriterTextWidget(
@@ -1997,7 +2064,7 @@ class _MessageTile extends StatelessWidget {
             onComplete: onRevealComplete,
             style: RitualTypography.narrative(
               17 * textScale,
-              color: narrativeColor,
+              color: responseColor,
             ).copyWith(
               fontFamily: forceSerif ? 'Georgia' : null,
               fontFamilyFallback:
@@ -2009,17 +2076,68 @@ class _MessageTile extends StatelessWidget {
       case MessageRole.error:
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Text(
+          child: _DemiurgeErrorGlitch(
             text,
-            style: TextStyle(
-              color: Colors.red.shade300,
-              fontFamily: RitualTypography.command(12).fontFamily,
-              fontSize: 13 * textScale,
-              fontStyle: FontStyle.italic,
-            ),
+            textScale: textScale,
           ),
         );
     }
+  }
+}
+
+class _DemiurgeErrorGlitch extends StatelessWidget {
+  final String text;
+  final double textScale;
+
+  const _DemiurgeErrorGlitch(this.text, {required this.textScale});
+
+  @override
+  Widget build(BuildContext context) {
+    final baseStyle = TextStyle(
+      color: Colors.red.shade300,
+      fontFamily: RitualTypography.command(12).fontFamily,
+      fontSize: 13 * textScale,
+      fontStyle: FontStyle.italic,
+    );
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, _) {
+        final glitch = sin(value * pi * 4) * (1 - value);
+        final ghostAlpha = glitch.abs() * 0.34;
+        return AnimatedOpacity(
+          opacity: 1,
+          duration: const Duration(milliseconds: 90),
+          child: Stack(
+            children: [
+              Transform.translate(
+                offset: Offset(1.4 * glitch, 0),
+                child: Text(
+                  text,
+                  style: baseStyle.copyWith(
+                    color:
+                        const Color(0xFF7DFFF2).withValues(alpha: ghostAlpha),
+                  ),
+                ),
+              ),
+              Transform.translate(
+                offset: Offset(-1.2 * glitch, 0),
+                child: Text(
+                  text,
+                  style: baseStyle.copyWith(
+                    color:
+                        const Color(0xFFFF4B6A).withValues(alpha: ghostAlpha),
+                  ),
+                ),
+              ),
+              Text(text, style: baseStyle),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -2108,6 +2226,7 @@ class _TypewriterTextWidgetState extends State<TypewriterTextWidget> {
     final char = _markedText.plainText[_visibleCharacters];
     final baseMilliseconds = switch (widget.speed) {
       TypewriterTextSpeed.slow => 72,
+      TypewriterTextSpeed.weighted => 34,
       TypewriterTextSpeed.normal => 26,
       TypewriterTextSpeed.instant => 0,
     };
@@ -2580,53 +2699,105 @@ class _PuzzleSolvedOverlay extends StatelessWidget {
   }
 }
 
-class _SimulacrumBanner extends StatelessWidget {
-  final String? text;
+class _RevelationOverlay extends StatelessWidget {
+  final String? title;
+  final String? subtitle;
   final SectorVisualProfile visualProfile;
   final bool reduceMotion;
 
-  const _SimulacrumBanner({
-    required this.text,
+  const _RevelationOverlay({
+    required this.title,
+    required this.subtitle,
     required this.visualProfile,
     required this.reduceMotion,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSlide(
-      duration:
-          reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
-      offset: text == null ? const Offset(0, -1.1) : Offset.zero,
-      curve: Curves.easeOutCubic,
-      child: AnimatedOpacity(
-        opacity: text == null ? 0 : 1,
-        duration:
-            reduceMotion ? Duration.zero : const Duration(milliseconds: 220),
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 420),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    final active = title != null && subtitle != null;
+    final duration =
+        reduceMotion ? Duration.zero : const Duration(milliseconds: 420);
+    return IgnorePointer(
+      ignoring: !active,
+      child: AbsorbPointer(
+        absorbing: active,
+        child: AnimatedOpacity(
+          opacity: active ? 1 : 0,
+          duration: duration,
+          curve: active ? Curves.easeOutCubic : Curves.easeInCubic,
+          child: DecoratedBox(
             decoration: BoxDecoration(
-              color: const Color(0xFF17120A).withValues(alpha: 0.94),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: visualProfile.accent),
-              boxShadow: [
-                BoxShadow(
-                  color: visualProfile.glow.withValues(alpha: 0.28),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+              color: Colors.black.withValues(alpha: 0.74),
             ),
-            child: Text(
-              text ?? '',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: const Color(0xFFF1E5C9),
-                fontWeight: FontWeight.w600,
-                fontFamily: RitualTypography.ritualSans(12).fontFamily,
-                letterSpacing: 0.45,
+            child: Center(
+              child: AnimatedScale(
+                scale: active ? 1.0 : 0.965,
+                duration: duration,
+                curve: Curves.easeOutCubic,
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 620),
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 26,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: visualProfile.accent.withValues(alpha: 0.78),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: visualProfile.glow.withValues(alpha: 0.22),
+                        blurRadius: 42,
+                        spreadRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '✦',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: visualProfile.accent.withValues(alpha: 0.96),
+                          fontFamily: 'Georgia',
+                          fontSize: 34,
+                          height: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        title ?? '',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xFFFFF5DC),
+                          fontFamily: 'Georgia',
+                          fontFamilyFallback: ['Times New Roman', 'serif'],
+                          fontSize: 30,
+                          fontWeight: FontWeight.w600,
+                          height: 1.16,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        subtitle ?? '',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color:
+                              const Color(0xFFE4D7B8).withValues(alpha: 0.88),
+                          fontFamily:
+                              RitualTypography.ritualSans(13).fontFamily,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.42,
+                          height: 1.42,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -2713,6 +2884,42 @@ class _EpiphanyPopup extends StatelessWidget {
   }
 }
 
+class _PlayerCommandArrival extends StatefulWidget {
+  final Widget child;
+
+  const _PlayerCommandArrival({required this.child});
+
+  @override
+  State<_PlayerCommandArrival> createState() => _PlayerCommandArrivalState();
+}
+
+class _PlayerCommandArrivalState extends State<_PlayerCommandArrival> {
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _visible = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSlide(
+      offset: _visible ? Offset.zero : const Offset(0, 0.22),
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      child: AnimatedOpacity(
+        opacity: _visible ? 1 : 0,
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOutCubic,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
 class _InputShakeWrapper extends StatefulWidget {
   final Widget child;
 
@@ -2724,9 +2931,14 @@ class _InputShakeWrapper extends StatefulWidget {
 
 class _InputShakeWrapperState extends State<_InputShakeWrapper> {
   int _shakeTick = 0;
+  int _acceptedTick = 0;
 
   void triggerShake() {
     setState(() => _shakeTick++);
+  }
+
+  void triggerAcceptedCommand() {
+    setState(() => _acceptedTick++);
   }
 
   @override
@@ -2743,7 +2955,43 @@ class _InputShakeWrapperState extends State<_InputShakeWrapper> {
           child: child,
         );
       },
-      child: widget.child,
+      child: Stack(
+        children: [
+          widget.child,
+          Positioned.fill(
+            child: IgnorePointer(
+              child: TweenAnimationBuilder<double>(
+                key: ValueKey(_acceptedTick),
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, _) {
+                  final pulse = _acceptedTick == 0 ? 0.0 : (1 - value);
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.46 * pulse),
+                          width: 1.2 + 1.8 * pulse,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: 0.20 * pulse),
+                            blurRadius: 18 * pulse,
+                            spreadRadius: 1.5 * pulse,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -352,13 +352,7 @@ class _PsychoShiftResult {
 class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
   final _history = DialogueHistoryService.instance;
   final Random _random = Random();
-  final SectorRouter _sectorRouter = SectorRouter([
-    GardenSectorHandler(),
-    ObservatorySectorHandler(),
-    GallerySectorHandler(),
-    LaboratorySectorHandler(),
-    MemorySectorHandler(),
-  ]);
+  final SectorRouter _sectorRouter = SectorRouter(_activeSectorHandlers());
 
   // ── Auto-save state (ephemeral — not persisted) ──────────────────────────
   int _commandsSinceAutoSave = 0;
@@ -401,6 +395,19 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     'The phrase does not find a lock in this room.\n\nNo threshold answers.',
     'The Archive receives the sound only.\n\nThe chamber remains unchanged.',
   ];
+
+  static List<SectorHandler> _activeSectorHandlers() {
+    if (kIsPreviewBuild) {
+      return [GardenSectorHandler()];
+    }
+    return [
+      GardenSectorHandler(),
+      ObservatorySectorHandler(),
+      GallerySectorHandler(),
+      LaboratorySectorHandler(),
+      MemorySectorHandler(),
+    ];
+  }
 
   // ── Small helpers ───────────────────────────────────────────────────────────
 
@@ -569,7 +576,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
       case FeedbackKind.solvedPuzzle:
         return const Duration(milliseconds: 500);
       case FeedbackKind.simulacrumFound:
-        return const Duration(milliseconds: 1200);
+        return const Duration(seconds: 1);
       case FeedbackKind.sectorTransition:
         return const Duration(milliseconds: 500);
       case FeedbackKind.majorRevelation:

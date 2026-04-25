@@ -385,6 +385,10 @@ class AudioService with WidgetsBindingObserver {
         if (asset != null) await playSFX(asset);
         return;
       }
+      if (trigger == 'first_bach_revelation') {
+        await _playFirstBachRevelation();
+        return;
+      }
       if (_ambientOnlyGameplay && _gameplayAudioUnlocked) {
         if (trigger == 'calm' ||
             trigger == 'simulacrum' ||
@@ -403,10 +407,6 @@ class AudioService with WidgetsBindingObserver {
       }
       if (trigger == 'preview_closure') {
         await _playPreviewClosureTrack();
-        return;
-      }
-      if (trigger == 'first_bach_revelation') {
-        await _crossfadeTo('aria_goldberg');
         return;
       }
       if (trigger == 'title_threshold') {
@@ -798,6 +798,59 @@ class AudioService with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _playFirstBachRevelation() async {
+    const key = 'aria_goldberg';
+    final asset = AudioTrackCatalog.assetForKey(key);
+    if (asset == null || !await _assetExists(asset)) return;
+
+    try {
+      _silenceEndingActive = false;
+      _isFirstTrack = false;
+
+      final currentNode = _currentNodeId;
+      final ambientWasPlaying =
+          _currentAmbientKey != null && _ambientPlayer.playing;
+      if (ambientWasPlaying) {
+        await _rampAmbientVolume(0.035, steps: 12, msPerStep: 45);
+      }
+
+      if (_backgroundPlayer.volume > 0.03) {
+        await _rampVolume(0.0, steps: 18, msPerStep: 45);
+      }
+
+      await _backgroundPlayer.stop();
+      await _backgroundPlayer.setAsset(asset);
+      await _backgroundPlayer.setLoopMode(LoopMode.off);
+      await _backgroundPlayer.setVolume(0.0);
+      await _backgroundPlayer.setSpeed(1.0);
+      _currentAmbienceKey = key;
+
+      // ignore: discarded_futures
+      _backgroundPlayer.play();
+      await _rampVolume(
+        _targetVolumeFor(key),
+        steps: 32,
+        msPerStep: 65,
+      );
+      await Future.delayed(const Duration(seconds: 10));
+      await _rampVolume(0.0, steps: 40, msPerStep: 50);
+      await _backgroundPlayer.stop();
+      await _backgroundPlayer.setVolume(0.0);
+      _currentAmbienceKey = null;
+
+      if (currentNode != null && _isMusicEnabled) {
+        if (_currentAmbientKey != null && _ambientPlayer.playing) {
+          await _rampAmbientVolume(_ambientTargetForNode(currentNode));
+        } else {
+          await _syncAmbientForNode(currentNode);
+        }
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print('[Audio] First Bach revelation failed: $e');
+    }
+  }
+
   Future<void> _fadeOutAmbientForPreviewClosure() async {
     await _rampAmbientVolume(0.0, steps: 20, msPerStep: 110);
     await _ambientPlayer.stop();
@@ -1011,6 +1064,26 @@ class AudioService with WidgetsBindingObserver {
     }
   }
 
+  double _ambientTargetForNode(String nodeId) {
+    final sector = AudioTrackCatalog.sectorForNode(nodeId);
+    final sectorBias = switch (sector) {
+      'threshold' => 0.72,
+      'garden' => 0.72,
+      'osservatorio' => 0.88,
+      _ => 1.0,
+    };
+    final nodeBias = switch (nodeId) {
+      'garden_fountain' => 1.0,
+      'garden_stelae' => 0.64,
+      'garden_grove' => 0.58,
+      'garden_alcove_pleasures' => 0.68,
+      'garden_alcove_pains' => 0.62,
+      _ => 1.0,
+    };
+    return (_ambientVolume * _musicVolumeScale * sectorBias * nodeBias)
+        .clamp(0.0, 0.45);
+  }
+
   /// Syncs the ambient layer for [nodeId]. Runs independently of the music
   /// queue — the two players never block each other.
   Future<void> _syncAmbientForNode(String nodeId) async {
@@ -1052,23 +1125,7 @@ class AudioService with WidgetsBindingObserver {
       // fire-and-forget — same reason as _backgroundPlayer.play()
       // ignore: discarded_futures
       _ambientPlayer.play();
-      final sectorBias = switch (sector) {
-        'threshold' => 0.72,
-        'garden' => 0.72, // lighter water bed; no constant hiss under Bach
-        'osservatorio' => 0.88, // lighter, airy metallic resonance
-        _ => 1.0,
-      };
-      final nodeBias = switch (nodeId) {
-        'garden_fountain' => 1.0,
-        'garden_stelae' => 0.64,
-        'garden_grove' => 0.58,
-        'garden_alcove_pleasures' => 0.68,
-        'garden_alcove_pains' => 0.62,
-        _ => 1.0,
-      };
-      final targetVol =
-          (_ambientVolume * _musicVolumeScale * sectorBias * nodeBias)
-              .clamp(0.0, 0.45);
+      final targetVol = _ambientTargetForNode(nodeId);
       // ignore: avoid_print
       print(
           '[Audio] Ambient "$ambientKey" → $asset (vol ${targetVol.toStringAsFixed(2)})');
