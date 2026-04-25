@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:archive_of_oblivion/features/demiurge/demiurge_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('DemiurgeEntry', () {
     test('formats an entry for display', () {
       const entry = DemiurgeEntry(
@@ -60,6 +62,25 @@ void main() {
       service.restorePhase(2);
 
       expect(service.currentPhase, 2);
+    });
+  });
+
+  group('DemiurgeService preview loading', () {
+    test('loads only the public preview citation bundles', () async {
+      final service = DemiurgeService.instance;
+
+      await service.loadPreviewBundles();
+
+      expect(
+        service.loadedSectorKeys,
+        containsAll(DemiurgeService.previewSectorKeys),
+      );
+      expect(
+        service.loadedSectorKeys.difference(
+          DemiurgeService.previewSectorKeys.toSet(),
+        ),
+        isEmpty,
+      );
     });
   });
 }

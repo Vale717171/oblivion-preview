@@ -8,6 +8,7 @@ import 'dart:math' show Random, max, min;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/config/build_config.dart';
 import '../../core/storage/database_service.dart';
 import '../../core/storage/dialogue_history_service.dart';
 import '../audio/audio_service.dart';
@@ -46,8 +47,6 @@ const Set<String> _simulacraNames = {
   'the proportion',
   'the catalyst',
 };
-
-const bool _previewBuild = true;
 
 const Set<String> simulacraItemNames = _simulacraNames;
 
@@ -1004,7 +1003,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
         memoryWasSaved: memoryWasSaved,
         psychoProfileFieldsPresent: psychoProfileFieldsPresent,
       );
-      if (!_previewBuild && feedbackKind == FeedbackKind.solvedPuzzle) {
+      if (!kIsPreviewBuild && feedbackKind == FeedbackKind.solvedPuzzle) {
         // ignore: discarded_futures
         AudioService().handleTrigger('reward_bach_soft');
       }
@@ -1253,7 +1252,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     }
     final direction = cmd.args.first;
 
-    if (_previewBuild && nodeId == 'la_soglia') {
+    if (kIsPreviewBuild && nodeId == 'la_soglia') {
       final previewBlock = _previewThresholdBlock(direction);
       if (previewBlock != null) {
         return EngineResponse(narrativeText: previewBlock);
@@ -1352,7 +1351,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
   }
 
   EngineResponse _handleWait(String nodeId, GameEngineState s) {
-    if (_previewBuild && nodeId == 'preview_epilogue') {
+    if (kIsPreviewBuild && nodeId == 'preview_epilogue') {
       return const EngineResponse(
         narrativeText: 'Nothing more is demanded here.\n\n'
             'If this brief descent stayed with you, leave a comment on the itch.io page and say whether you want the full release.',
@@ -1372,7 +1371,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
 
   EngineResponse _handleTake(
       ParsedCommand cmd, String nodeId, NodeDef node, GameEngineState s) {
-    if (_previewBuild && nodeId == 'preview_epilogue') {
+    if (kIsPreviewBuild && nodeId == 'preview_epilogue') {
       return const EngineResponse(
         narrativeText:
             'There is nothing here to take except the wish to continue.',
@@ -1745,7 +1744,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
   /// Handles commands not recognised by the parser (contextual raw-input parsing).
   EngineResponse _handleUnknown(
       ParsedCommand cmd, String nodeId, GameEngineState s) {
-    if (_previewBuild && nodeId == 'preview_epilogue') {
+    if (kIsPreviewBuild && nodeId == 'preview_epilogue') {
       return const EngineResponse(
         narrativeText: 'The preview has reached its end.\n\n'
             'What remains now is your impression of it — and whether this descent should continue.',

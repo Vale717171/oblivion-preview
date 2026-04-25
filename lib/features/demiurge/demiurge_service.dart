@@ -10,6 +10,9 @@ import 'dart:math' show Random;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/config/build_config.dart';
+import '../../core/utils/app_logger.dart';
+
 /// A single response entry from the Demiurge JSON bundles.
 class DemiurgeEntry {
   final String opening;
@@ -76,6 +79,8 @@ class DemiurgeService {
 
   int get currentPhase => _currentPhase;
 
+  Set<String> get loadedSectorKeys => Set.unmodifiable(_pools.keys);
+
   /// Sector → list of loaded entries.
   final Map<String, List<DemiurgeEntry>> _pools = {};
 
@@ -97,6 +102,11 @@ class DemiurgeService {
     'universale',
   ];
 
+  static const List<String> previewSectorKeys = [
+    'giardino',
+    'universale',
+  ];
+
   // ── Loading ──────────────────────────────────────────────────────────────
 
   /// Loads all sector bundles from assets. Safe to call multiple times.
@@ -107,10 +117,32 @@ class DemiurgeService {
     }
   }
 
+  /// Loads only the citation bundles needed by the public preview.
+  Future<void> loadPreviewBundles() async {
+    for (final sector in previewSectorKeys) {
+      if (_pools.containsKey(sector)) continue;
+      await _loadSector(sector);
+    }
+
+    assert(() {
+      if (!kIsPreviewBuild) return true;
+      final unexpected = _pools.keys
+          .where((sector) => !previewSectorKeys.contains(sector))
+          .toList(growable: false);
+      if (unexpected.isNotEmpty) {
+        throw StateError(
+          'Preview must load only ${previewSectorKeys.join(", ")}; '
+          'unexpected bundles: ${unexpected.join(", ")}',
+        );
+      }
+      return true;
+    }());
+  }
+
   Future<void> _loadSector(String sector) async {
     try {
-      final raw = await rootBundle
-          .loadString('assets/texts/demiurge/$sector.json');
+      final raw =
+          await rootBundle.loadString('assets/texts/demiurge/$sector.json');
       final data = jsonDecode(raw) as Map<String, dynamic>;
       final responses = (data['responses'] as List<dynamic>)
           .map((e) => DemiurgeEntry.fromJson(e as Map<String, dynamic>))
@@ -121,9 +153,7 @@ class DemiurgeService {
       // Bundle missing or malformed — seed the pool with one in-code fallback
       // entry so the player always receives a response rather than raw
       // fallbackText, which could expose implementation strings.
-      // ignore: avoid_print
-      // ignore: avoid_print
-      print('[Archive] DemiurgeService: failed to load $sector — $e');
+      AppLogger.log('Archive', 'DemiurgeService failed to load $sector: $e');
       _pools[sector] = [DemiurgeEntry.fallback(sector)];
       _recentIndices[sector] = [];
     }
@@ -135,8 +165,7 @@ class DemiurgeService {
   /// Falls back to the [universale] pool when the sector pool is empty,
   /// and to [fallbackText] when no entries are available at all.
   String respond({required String sector, required String fallbackText}) {
-    final entry = _pickEntry(sector) ??
-        _pickEntry('universale');
+    final entry = _pickEntry(sector) ?? _pickEntry('universale');
     return entry?.format() ?? fallbackText;
   }
 
