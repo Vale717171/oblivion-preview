@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate lawful placeholder audio assets for local/device playtests.
+"""Generate lawful placeholder audio assets for local/web preview playtests.
 
 This script does not download third-party recordings. It synthesizes simple
 ambient loops and one-shot cues with ffmpeg so the app can be tested with real

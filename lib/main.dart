@@ -22,8 +22,7 @@ void main() async {
     databaseFactory = databaseFactoryFfi;
   }
 
-  // Global error handlers — catch unhandled exceptions that would otherwise
-  // silently crash the app and trigger Android's crash-restart loop.
+  // Global error handlers: keep unhandled exceptions visible in debug logs.
   FlutterError.onError = (FlutterErrorDetails details) {
     AppLogger.log(
       'FlutterError',
@@ -36,14 +35,14 @@ void main() async {
     return true; // mark as handled so the app does not terminate
   };
 
-  // Avoid runtime network font fetches on restricted/offline devices.
+  // Avoid runtime network font fetches in restricted/offline browser sessions.
   GoogleFonts.config.allowRuntimeFetching = kIsWeb;
 
   // ProviderContainer necessario per inizializzare AudioService
   // prima di runApp (audio_service usa container.listen, non WidgetRef)
   final container = ProviderContainer();
 
-  // Inizializza audio + sessione Android
+  // Initialize audio and the browser playback session.
   final audioService = AudioService();
   bool audioFailed = false;
   try {

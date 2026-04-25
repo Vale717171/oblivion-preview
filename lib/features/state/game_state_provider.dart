@@ -2,7 +2,7 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sqflite/sqflite.dart'; // required for ConflictAlgorithm
+import 'package:sqflite_common/sqflite.dart'; // required for ConflictAlgorithm
 import '../../core/storage/database_service.dart';
 
 class GameState {

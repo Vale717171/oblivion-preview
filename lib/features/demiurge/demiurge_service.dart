@@ -47,7 +47,7 @@ class DemiurgeEntry {
   String format() => '$opening\n\n"$citation"\n— $author\n\n$closing';
 }
 
-/// Deterministic narrator service — replaces the on-device LLM.
+/// Deterministic narrator service — replaces the experimental LLM narrator.
 ///
 /// Loads curated citation bundles from `assets/texts/demiurge/` and serves
 /// responses that blend enigmatic openings, public-domain citations, and

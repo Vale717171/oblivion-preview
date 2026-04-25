@@ -10,7 +10,7 @@
 
 import 'dart:convert';
 
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common/sqflite.dart';
 
 import '../storage/database_service.dart';
 

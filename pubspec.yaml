@@ -1,5 +1,5 @@
 name: archive_of_oblivion
-description: L'Archivio dell'Oblio — psycho-philosophical text adventure for Android.
+description: L'Archivio dell'Oblio — psycho-philosophical text adventure webapp for Itch.io.
 publish_to: 'none'
 
 version: 0.1.0+1
@@ -13,11 +13,10 @@ dependencies:
   flutter_riverpod: ^2.5.1
   just_audio: ^0.9.36
   audio_session: ^0.1.18
-  sqflite: ^2.3.0
+  sqflite_common: ^2.5.6
   sqflite_common_ffi: ^2.3.3
   sqflite_common_ffi_web: ^1.0.0
   path: ^1.9.0
-  path_provider: ^2.1.2
   google_fonts: ^6.2.1
 
 dev_dependencies:

@@ -1,5 +1,5 @@
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:sqflite_common/sqflite.dart';
 
 class DatabaseService {
   static const _databaseName = "oblivion_preview_archive.db";

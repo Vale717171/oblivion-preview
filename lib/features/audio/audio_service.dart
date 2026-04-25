@@ -95,8 +95,8 @@ class AudioService with WidgetsBindingObserver {
   Future<void> initialize(ProviderContainer container) async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
-    // Activate the session so Android grants audio focus before the first play().
-    // Without this, just_audio plays silently on many Android devices.
+    // Activate the session before the first play(), so browsers and plugin
+    // backends have a ready audio context when the player starts.
     await session.setActive(true);
 
     await _backgroundPlayer.setLoopMode(LoopMode.one);
