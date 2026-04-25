@@ -180,6 +180,10 @@ const List<double> _backgroundImageBrightnessMatrix = [
   0,
 ];
 
+final FocusNode gameCommandFocusNode = FocusNode(
+  debugLabel: 'game-command-input',
+);
+
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
 
@@ -191,7 +195,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     with WidgetsBindingObserver {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
-  final _focusNode = FocusNode();
+  final _focusNode = gameCommandFocusNode;
 
   // Typewriter state for the last narrative message
   String _typewriterBuffer = '';
@@ -299,7 +303,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
     _epiphanyPopupTimer?.cancel();
     _controller.dispose();
     _scrollController.dispose();
-    _focusNode.dispose();
     super.dispose();
   }
 
@@ -994,35 +997,45 @@ class _GameScreenState extends ConsumerState<GameScreen>
       ..selection = TextSelection.collapsed(offset: entry.length);
   }
 
-  void _submit() {
-    final text = _controller.text.trim();
-    if (_typewriterRunning) {
-      _skipTypewriter();
-      if (text.isEmpty) return;
-    }
-    if (text.isEmpty) return;
-    _startGameplayAudioFromInput();
-    // Secret walkthrough unlock command — consumed here, never forwarded to engine.
-    if (text == _walkthroughUnlockCommand) {
-      _controller.clear();
-      setState(() => _walkthroughUnlocked = true);
+  void _refocusCommandInput() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _focusNode.requestFocus();
-      return;
+      SystemChannels.textInput.invokeMethod('TextInput.show');
+    });
+  }
+
+  void _submit() {
+    try {
+      final text = _controller.text.trim();
+      if (_typewriterRunning) {
+        _skipTypewriter();
+        if (text.isEmpty) return;
+      }
+      if (text.isEmpty) return;
+      _startGameplayAudioFromInput();
+      // Secret walkthrough unlock command — consumed here, never forwarded to engine.
+      if (text == _walkthroughUnlockCommand) {
+        _controller.clear();
+        setState(() => _walkthroughUnlocked = true);
+        return;
+      }
+      // Immediate "key press" feedback — fires before the engine processes the command.
+      if (_hapticsOn()) HapticFeedback.mediumImpact();
+      _controller.clear();
+      _lastSubmittedCommand = text;
+      // Add to history (skip duplicates of the most recent entry; cap at 30).
+      if (_commandHistory.isEmpty || _commandHistory.last != text) {
+        _commandHistory.add(text);
+        if (_commandHistory.length > 30) _commandHistory.removeAt(0);
+      }
+      _historyIndex = -1;
+      _historyDraft = '';
+      ref.read(gameEngineProvider.notifier).processInput(text);
+    } finally {
+      _refocusCommandInput();
     }
-    // Immediate "key press" feedback — fires before the engine processes the command.
-    if (_hapticsOn()) HapticFeedback.mediumImpact();
-    _controller.clear();
-    _lastSubmittedCommand = text;
-    // Add to history (skip duplicates of the most recent entry; cap at 30).
-    if (_commandHistory.isEmpty || _commandHistory.last != text) {
-      _commandHistory.add(text);
-      if (_commandHistory.length > 30) _commandHistory.removeAt(0);
-    }
-    _historyIndex = -1;
-    _historyDraft = '';
-    ref.read(gameEngineProvider.notifier).processInput(text);
-    _focusNode.requestFocus();
-    SystemChannels.textInput.invokeMethod('TextInput.show');
   }
 
   void _startGameplayAudioFromInput() {
