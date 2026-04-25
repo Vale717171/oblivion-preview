@@ -241,6 +241,48 @@ class AudioService with WidgetsBindingObserver {
     await fadeOutTitleCue();
   }
 
+  Future<void> enterArchiveAt(String nodeId) async {
+    await _unlockPlayersForUserGesture();
+    _titleCuePlaying = false;
+    _gameplayAudioUnlocked = true;
+    _currentNodeId = nodeId;
+    await _backgroundPlayer.stop();
+    await _backgroundPlayer.setVolume(0.0);
+    await _backgroundPlayer.setSpeed(1.0);
+    await _syncAmbientForNode(nodeId);
+  }
+
+  Future<void> crossfadeMusic(String newTrack) {
+    return _enqueueAudioOperation(() async {
+      final key = AudioTrackCatalog.assetForKey(newTrack) == null &&
+              newTrack.startsWith('assets/')
+          ? newTrack
+          : newTrack.trim();
+      final asset = AudioTrackCatalog.assetForKey(key) ?? key;
+      if (!await _assetExists(asset)) return;
+
+      _silenceEndingActive = false;
+      _isFirstTrack = false;
+
+      await _rampVolume(0.0, steps: 40, msPerStep: 50);
+      await _backgroundPlayer.stop();
+      await _backgroundPlayer.setAsset(asset);
+      await _backgroundPlayer.setLoopMode(LoopMode.one);
+      await _backgroundPlayer.setVolume(0.0);
+      await _backgroundPlayer.setSpeed(1.0);
+      // ignore: discarded_futures
+      _backgroundPlayer.play();
+
+      final targetVolume = AudioTrackCatalog.assetForKey(key) == null
+          ? (_baseTrackVolume * _musicVolumeScale).clamp(0.0, _maxMixVolume)
+          : _targetVolumeFor(key);
+      await _rampVolume(targetVolume, steps: 40, msPerStep: 50);
+      if (AudioTrackCatalog.assetForKey(key) != null) {
+        _currentAmbienceKey = key;
+      }
+    });
+  }
+
   Future<void> syncForNode(String nodeId, {bool force = false}) async {
     // Record the latest requested track key immediately, before enqueuing.
     // This lets _syncForNodeInternal detect and skip stale intermediate targets.
@@ -622,6 +664,26 @@ class AudioService with WidgetsBindingObserver {
       print('Queued audio operation failed: $error\n$stackTrace');
     });
     return _audioOperationQueue;
+  }
+
+  Future<void> _unlockPlayersForUserGesture() async {
+    if (_webPlayersUnlocked) return;
+    _webPlayersUnlocked = true;
+
+    final players = [_backgroundPlayer, _ambientPlayer, _rewardPlayer];
+    for (final player in players) {
+      try {
+        await player.setVolume(0.0);
+        // play/pause inside the button gesture unlocks the browser AudioContext.
+        // ignore: discarded_futures
+        player.play();
+        await player.pause();
+        await player.seek(Duration.zero);
+      } catch (_) {
+        // Some players may not have an asset yet; unlocking will still succeed
+        // for the first player that can accept a play call after setAsset().
+      }
+    }
   }
 
   Future<void> _applyCurrentMix({double intensityOffset = 0.0}) async {

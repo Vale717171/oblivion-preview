@@ -17,8 +17,8 @@ void main() {
       ),
     );
 
-    await tester.pump(const Duration(seconds: 5));
+    await tester.pump();
 
-    expect(find.text('ENTER PREVIEW'), findsOneWidget);
+    expect(find.text('Enter the Archive'), findsOneWidget);
   });
 }

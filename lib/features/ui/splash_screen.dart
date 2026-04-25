@@ -1,342 +1,148 @@
 // lib/features/ui/splash_screen.dart
 //
-// Cinematic opening splash for The Archive of Oblivion.
-//
-// Sequence (normal mode):
-//   1. Black screen → threshold_bg fades in over 1 500 ms.
-//   2. A barely-there Bach threshold motif starts softly under the image.
-//   3. After 1 600 ms the title container becomes visible; the typewriter
-//      begins writing "The Archive of Oblivion" at ~75 ms / char.
-//   4. Once the title is complete, a "Play" button appears and waits for the
-//      player, giving the opening music time to breathe.
-//   5. Tapping while the title is still typing fills it instantly, but does
-//      not navigate automatically.
-//
-// With reduceMotion:
-//   All animations are instant; the full title and "Play" button are shown
-//   immediately, but the screen still waits for explicit confirmation.
+// Explicit web-entry splash. Navigation only happens from the player's button
+// press, which also gives the browser a trusted gesture for audio unlock.
 
-import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../audio/audio_service.dart';
 import '../settings/app_settings_provider.dart';
-import 'home_screen.dart';
+import 'game_screen.dart';
 
-class SplashScreen extends ConsumerStatefulWidget {
-  const SplashScreen({super.key, this.audioFailed = false});
+class SplashScreen extends SplashScreenWidget {
+  const SplashScreen({super.key, super.audioFailed});
+}
 
-  /// Passed through to HomeScreen so the audio-failure banner can be shown.
+class SplashScreenWidget extends ConsumerStatefulWidget {
+  const SplashScreenWidget({super.key, this.audioFailed = false});
+
+  /// Kept for startup diagnostics compatibility.
   final bool audioFailed;
 
   @override
-  ConsumerState<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreenWidget> createState() => _SplashScreenWidgetState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen> {
-  static const String _fullTitle = 'The Archive of Oblivion Preview';
-  static const String _subtitle = 'Public Preview';
+class _SplashScreenWidgetState extends ConsumerState<SplashScreenWidget> {
+  bool _entering = false;
 
-  // ── state ──────────────────────────────────────────────────────────────────
-  String _displayedTitle = '';
-  int _charIndex = 0;
-  bool _bgVisible = false;
-  bool _titleVisible = false;
-  bool _showPlayButton = false;
-  bool _exiting = false;
-  bool _showSubtitle = false;
-  bool _titleCueUnlocked = false;
+  Future<void> _enterArchive() async {
+    if (_entering) return;
+    setState(() => _entering = true);
 
-  Timer? _typewriterTimer;
-
-  // ── lifecycle ──────────────────────────────────────────────────────────────
-
-  @override
-  void initState() {
-    super.initState();
-    // Defer to the first frame so that the widget tree (and Riverpod providers)
-    // are fully initialised before we read settings or push to the navigator.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _startSequence());
-  }
-
-  @override
-  void dispose() {
-    _typewriterTimer?.cancel();
-    super.dispose();
-  }
-
-  // ── sequence ───────────────────────────────────────────────────────────────
-
-  void _startSequence() {
-    if (!mounted) return;
-
-    final settings = ref.read(appSettingsProvider).valueOrNull;
-    final reduceMotion = settings?.reduceMotion ?? false;
-
-    // Preload the title cue so the first user tap can start it immediately on
-    // web without running into autoplay restrictions.
-    // ignore: discarded_futures
-    AudioService().prepareTitleSceneCue();
-
-    // Show background (instant with reduceMotion, animated otherwise).
-    setState(() => _bgVisible = true);
-
-    if (reduceMotion) {
-      // Skip all animation but still let the player control when to enter.
-      setState(() {
-        _titleVisible = true;
-        _showSubtitle = true;
-        _displayedTitle = _fullTitle;
-        _charIndex = _fullTitle.length;
-        _showPlayButton = true;
-      });
-      if (!kIsWeb) _unlockTitleCue();
-    } else {
-      // Wait for the background to finish fading before typing begins.
-      Future.delayed(const Duration(milliseconds: 1600), () {
-        if (!mounted || _exiting) return;
-        setState(() {
-          _titleVisible = true;
-          _showSubtitle = true;
-        });
-        if (!kIsWeb) _unlockTitleCue();
-        _startTypewriter();
-      });
-    }
-  }
-
-  void _startTypewriter() {
-    _typewriterTimer =
-        Timer.periodic(const Duration(milliseconds: 75), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      if (_charIndex < _fullTitle.length) {
-        setState(() {
-          _charIndex++;
-          _displayedTitle = _fullTitle.substring(0, _charIndex);
-        });
-      } else {
-        timer.cancel();
-        if (!mounted || _exiting) return;
-        setState(() => _showPlayButton = true);
-      }
-    });
-  }
-
-  // ── interaction ────────────────────────────────────────────────────────────
-
-  void _onTap() {
-    if (_exiting) return;
-
-    // Haptic only when allowed.
     final settings = ref.read(appSettingsProvider).valueOrNull;
     if ((settings?.enableHaptics ?? true) &&
         !(settings?.reduceMotion ?? false)) {
-      HapticFeedback.lightImpact();
+      HapticFeedback.mediumImpact();
     }
 
-    _unlockTitleCue();
+    await AudioService().enterArchiveAt('intro_void');
 
-    if (_charIndex >= _fullTitle.length) return;
-
-    _typewriterTimer?.cancel();
-
-    setState(() {
-      _titleVisible = true;
-      _showSubtitle = true;
-      _displayedTitle = _fullTitle;
-      _charIndex = _fullTitle.length;
-      _showPlayButton = true;
-    });
-  }
-
-  // ── navigation ─────────────────────────────────────────────────────────────
-
-  void _unlockTitleCue() {
-    if (_titleCueUnlocked) return;
-    _titleCueUnlocked = true;
-    AudioService().unlockAndPlayTitleCue();
-  }
-
-  void _navigateToHome() {
-    if (_exiting) return;
-    _unlockTitleCue();
-    _exiting = true;
-
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) =>
-            HomeScreen(audioFailed: widget.audioFailed),
-        transitionDuration: const Duration(milliseconds: 800),
-        reverseTransitionDuration: const Duration(milliseconds: 400),
+        pageBuilder: (_, __, ___) => const GameScreen(),
+        transitionDuration: settings?.reduceMotion ?? false
+            ? Duration.zero
+            : const Duration(milliseconds: 700),
+        reverseTransitionDuration: const Duration(milliseconds: 300),
         transitionsBuilder: (_, animation, __, child) =>
             FadeTransition(opacity: animation, child: child),
       ),
     );
   }
 
-  // ── build ──────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(appSettingsProvider).valueOrNull;
     final reduceMotion = settings?.reduceMotion ?? false;
-    final bgFadeDuration =
-        reduceMotion ? Duration.zero : const Duration(milliseconds: 1500);
 
-    return GestureDetector(
-      onTap: _onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            // ── Background image ───────────────────────────────────────────
-            AnimatedOpacity(
-              opacity: _bgVisible ? 1.0 : 0.0,
-              duration: bgFadeDuration,
-              curve: Curves.easeIn,
-              child: Image.asset(
-                'assets/images/threshold_bg.jpg',
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-              ),
-            ),
-
-            // ── Dark veil (lighter than in-game to let the image breathe) ─
-            Container(color: Colors.black.withValues(alpha: 0.38)),
-
-            // ── Title ──────────────────────────────────────────────────────
-            AnimatedOpacity(
-              opacity: _titleVisible ? 1.0 : 0.0,
-              duration: reduceMotion
-                  ? Duration.zero
-                  : const Duration(milliseconds: 250),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 36.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _displayedTitle,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color(0xFFE9E3D6),
-                          fontSize: 30,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1.4,
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      AnimatedOpacity(
-                        opacity: _showSubtitle ? 1.0 : 0.0,
-                        duration: reduceMotion
-                            ? Duration.zero
-                            : const Duration(milliseconds: 320),
-                        child: const Text(
-                          _subtitle,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Color(0xFFD4C7AE),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 2.4,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      AnimatedOpacity(
-                        opacity: _showSubtitle ? 1.0 : 0.0,
-                        duration: reduceMotion
-                            ? Duration.zero
-                            : const Duration(milliseconds: 420),
-                        child: const Text(
-                          'A playable threshold. A first descent into stillness.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Color(0xFFE9E3D6),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 0.4,
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
-                    ],
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/images/threshold_bg.jpg',
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+          Container(color: Colors.black.withValues(alpha: 0.48)),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'The Archive of Oblivion',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFFE9E3D6),
+                      fontSize: 32,
+                      fontWeight: FontWeight.w600,
+                      height: 1.35,
+                    ),
                   ),
-                ),
-              ),
-            ),
-
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: SafeArea(
-                minimum: const EdgeInsets.fromLTRB(24, 24, 24, 112),
-                child: AnimatedOpacity(
-                  opacity: _showPlayButton ? 1.0 : 0.0,
-                  duration: reduceMotion
-                      ? Duration.zero
-                      : const Duration(milliseconds: 280),
-                  child: const IgnorePointer(
-                    ignoring: true,
-                    child: Text(
-                      'Headphones recommended · best experienced in silence',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xFFD4C7AE),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.4,
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Public Preview',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFFD4C7AE),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 2.4,
+                    ),
+                  ),
+                  const SizedBox(height: 36),
+                  FilledButton(
+                    onPressed: _entering ? null : _enterArchive,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFE9E3D6),
+                      foregroundColor: Colors.black,
+                      disabledBackgroundColor:
+                          const Color(0xFFE9E3D6).withValues(alpha: 0.45),
+                      disabledForegroundColor: Colors.black54,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 34,
+                        vertical: 17,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.9,
+                      ),
+                    ),
+                    child: AnimatedSwitcher(
+                      duration: reduceMotion
+                          ? Duration.zero
+                          : const Duration(milliseconds: 160),
+                      child: Text(
+                        _entering ? 'Opening...' : 'Enter the Archive',
+                        key: ValueKey(_entering),
                       ),
                     ),
                   ),
-                ),
-              ),
-            ),
-
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: SafeArea(
-                minimum: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-                child: AnimatedOpacity(
-                  opacity: _showPlayButton ? 1.0 : 0.0,
-                  duration: reduceMotion
-                      ? Duration.zero
-                      : const Duration(milliseconds: 280),
-                  child: IgnorePointer(
-                    ignoring: !_showPlayButton || _exiting,
-                    child: FilledButton(
-                      onPressed: _navigateToHome,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFE9E3D6),
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      child: const Text('ENTER PREVIEW'),
+                  const SizedBox(height: 22),
+                  const Text(
+                    'Headphones recommended',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFFD4C7AE),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.4,
                     ),
                   ),
-                ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
