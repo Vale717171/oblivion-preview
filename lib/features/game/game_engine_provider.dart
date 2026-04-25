@@ -436,6 +436,9 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
   static String _hintRequestCounterKey(String nodeId) =>
       'hint_requests_$nodeId';
 
+  static String _invalidActionCounterKey(String nodeId) =>
+      'invalid_actions_$nodeId';
+
   List<String> _missingDepthSectorsForQuinto(GameEngineState s) {
     final missing = <String>[];
     for (final entry in _depthThresholdsToQuinto.entries) {
@@ -694,7 +697,6 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
         cmd: cmd,
         response: response,
         nodeId: currentNodeId,
-        stateSnapshot: withPlayer,
       );
 
       state = AsyncValue.data(
@@ -747,6 +749,12 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
       if (response.incrementCounter != null) {
         newCounters[response.incrementCounter!] =
             (newCounters[response.incrementCounter!] ?? 0) + 1;
+      }
+      final invalidAttempts = _nonProductiveAttemptsByNode[currentNodeId] ?? 0;
+      if (invalidAttempts > 0) {
+        newCounters[_invalidActionCounterKey(currentNodeId)] = invalidAttempts;
+      } else {
+        newCounters.remove(_invalidActionCounterKey(currentNodeId));
       }
       newPuzzles.addAll(zoneResolution.puzzleAdds);
       for (final entry in zoneResolution.counterUpdates.entries) {
@@ -1782,9 +1790,21 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  String _enterNode(NodeDef node) {
+  String _enterNode(NodeDef node, {String? highlightedKeyword}) {
     final title = node.title.isEmpty ? '' : '${node.title}\n\n';
-    return '$title${node.description}';
+    final description = highlightedKeyword == null
+        ? node.description
+        : _markFirstKeyword(node.description, highlightedKeyword);
+    return '$title$description';
+  }
+
+  String _markFirstKeyword(String text, String keyword) {
+    final escapedKeyword = RegExp.escape(keyword);
+    final match = RegExp(escapedKeyword, caseSensitive: false).firstMatch(text);
+    if (match == null) return text;
+    return '${text.substring(0, match.start)}[['
+        '${text.substring(match.start, match.end)}'
+        ']]${text.substring(match.end)}';
   }
 
   String _hintTextForNode(String nodeId, int level, GameEngineState s) {
@@ -2338,7 +2358,6 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     required ParsedCommand cmd,
     required EngineResponse response,
     required String nodeId,
-    required GameEngineState stateSnapshot,
   }) {
     if (!_isProgressiveHintEligible(cmd.verb)) return null;
 
@@ -2359,34 +2378,72 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     final attempts = (_nonProductiveAttemptsByNode[nodeId] ?? 0) + 1;
     _nonProductiveAttemptsByNode[nodeId] = attempts;
 
-    if (attempts != 3 && attempts != 5) return null;
-    if (nodeId == 'obs_antechamber') {
-      if (attempts == 3) {
-        return '\n\nThe mount does not argue.\n\nTry an order that starts from the least dominant lens.';
-      }
-      return '\n\nThe mount keeps the same silence.\n\nMoon first, then Mercury, then Sun.';
+    if (attempts == 2) {
+      return '\n\n${_dynamicDemiurgeHint(nodeId)}';
     }
-    if (nodeId == 'gallery_hall') {
-      if (attempts == 3) {
-        return '\n\nThe mirrors refuse frontal insistence.\n\nTry moving while facing away from the door-line.';
-      }
-      return '\n\nThe hall repeats your straight path.\n\nWalk backward and watch what changes behind you.';
-    }
-    if (nodeId == 'gallery_copies') {
-      if (attempts == 3) {
-        return '\n\nThe wing keeps your wording, not your intent.\n\nName one element that is missing, not one that is present.';
-      }
-      return '\n\nThe copies remain exact and incomplete.\n\nGive one brief absence-statement, then test another canvas.';
-    }
-    final hintLevel = attempts == 3 ? 1 : 2;
-    final hintText = _hintTextForNode(nodeId, hintLevel, stateSnapshot);
-    final hintBody = hintText.contains('\n\n')
-        ? hintText.split('\n\n').skip(1).join('\n\n')
-        : hintText;
     if (attempts == 3) {
-      return '\n\n$hintBody';
+      final node = _nodes[nodeId];
+      final keyword = _interactiveKeywordForNode(nodeId);
+      if (node != null && keyword != null) {
+        return '\n\n${_dynamicDemiurgeHint(nodeId)}\n\n'
+            'The room permits one word to brighten:\n\n'
+            '${_enterNode(node, highlightedKeyword: keyword)}';
+      }
+      return '\n\n${_dynamicDemiurgeHint(nodeId)}';
     }
-    return '\n\nThe room does not close against you.\n\n$hintBody';
+    if (attempts >= 4) {
+      return '\n\n${_explicitDynamicHintForNode(nodeId)}';
+    }
+    return null;
+  }
+
+  String _dynamicDemiurgeHint(String nodeId) {
+    return _callDemiurge(
+      'The Demiurge answers from behind the shelving.\n\n'
+      '"The visible is not where the door is. It is where the hand learns to become a key."\n\n'
+      'The room has not refused you. It is waiting for a more exact verb.',
+      nodeId,
+    );
+  }
+
+  String _explicitDynamicHintForNode(String nodeId) {
+    final keyword = _interactiveKeywordForNode(nodeId);
+    final node = _nodes[nodeId];
+    if (keyword == null || node == null) {
+      return '[Hint: try to EXAMINE something named in the room]';
+    }
+
+    final verbs = <String>[];
+    if (node.examines.keys.any((key) => key == keyword)) {
+      verbs.add('EXAMINE');
+    }
+    if (node.takeable.contains(keyword)) {
+      verbs.add('TAKE');
+    }
+    if (verbs.isEmpty) {
+      verbs.add('EXAMINE');
+    }
+    return '[Hint: try to ${verbs.join(' or ')} the $keyword]';
+  }
+
+  String? _interactiveKeywordForNode(String nodeId) {
+    final node = _nodes[nodeId];
+    if (node == null) return null;
+
+    final takeable = node.takeable.where((item) {
+      return node.description.toLowerCase().contains(item.toLowerCase());
+    }).firstOrNull;
+    if (takeable != null) return takeable;
+
+    final examineKey = node.examines.keys.where((key) {
+      final lower = key.toLowerCase();
+      return lower.length > 2 && node.description.toLowerCase().contains(lower);
+    }).firstOrNull;
+    if (examineKey != null) return examineKey;
+
+    if (node.takeable.isNotEmpty) return node.takeable.first;
+    if (node.examines.isNotEmpty) return node.examines.keys.first;
+    return null;
   }
 
   bool _shouldThrottleMetaNarration({

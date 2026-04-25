@@ -1965,6 +1965,8 @@ class _TypewriterTextWidgetState extends State<TypewriterTextWidget> {
   int _visibleCharacters = 0;
   bool _completionReported = false;
 
+  _MarkedText get _markedText => _parseMarkedText(widget.text);
+
   @override
   void initState() {
     super.initState();
@@ -1992,7 +1994,7 @@ class _TypewriterTextWidgetState extends State<TypewriterTextWidget> {
     _completionReported = false;
 
     if (widget.revealAll || widget.speed == TypewriterTextSpeed.instant) {
-      _visibleCharacters = widget.text.length;
+      _visibleCharacters = _markedText.plainText.length;
       _reportComplete();
       return;
     }
@@ -2002,7 +2004,7 @@ class _TypewriterTextWidgetState extends State<TypewriterTextWidget> {
   }
 
   void _scheduleNextCharacter() {
-    if (_visibleCharacters >= widget.text.length) {
+    if (_visibleCharacters >= _markedText.plainText.length) {
       _reportComplete();
       return;
     }
@@ -2010,14 +2012,15 @@ class _TypewriterTextWidgetState extends State<TypewriterTextWidget> {
     _timer = Timer(_delayForNextCharacter(), () {
       if (!mounted) return;
       setState(() {
-        _visibleCharacters = min(widget.text.length, _visibleCharacters + 1);
+        _visibleCharacters =
+            min(_markedText.plainText.length, _visibleCharacters + 1);
       });
       _scheduleNextCharacter();
     });
   }
 
   Duration _delayForNextCharacter() {
-    final char = widget.text[_visibleCharacters];
+    final char = _markedText.plainText[_visibleCharacters];
     final baseMilliseconds = switch (widget.speed) {
       TypewriterTextSpeed.slow => 72,
       TypewriterTextSpeed.normal => 26,
@@ -2037,28 +2040,101 @@ class _TypewriterTextWidgetState extends State<TypewriterTextWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final visibleText = widget.text.substring(
+    final markedText = _markedText;
+    final visibleText = markedText.plainText.substring(
       0,
-      min(_visibleCharacters, widget.text.length),
+      min(_visibleCharacters, markedText.plainText.length),
     );
     return RichText(
       text: TextSpan(
-        text: visibleText,
         style: widget.style,
-        children: widget.showCursor
-            ? [
-                TextSpan(
-                  text: '▌',
-                  style: widget.style.copyWith(
-                    color: widget.style.color?.withValues(alpha: 0.7),
-                    fontSize: (widget.style.fontSize ?? 14) * 0.82,
-                  ),
-                ),
-              ]
-            : null,
+        children: [
+          ..._buildMarkedSpans(visibleText, markedText.ranges),
+          if (widget.showCursor)
+            TextSpan(
+              text: '▌',
+              style: widget.style.copyWith(
+                color: widget.style.color?.withValues(alpha: 0.7),
+                fontSize: (widget.style.fontSize ?? 14) * 0.82,
+              ),
+            ),
+        ],
       ),
     );
   }
+
+  _MarkedText _parseMarkedText(String text) {
+    final buffer = StringBuffer();
+    final ranges = <_MarkedRange>[];
+    var sourceIndex = 0;
+
+    while (sourceIndex < text.length) {
+      final start = text.indexOf('[[', sourceIndex);
+      if (start == -1) {
+        buffer.write(text.substring(sourceIndex));
+        break;
+      }
+      final end = text.indexOf(']]', start + 2);
+      if (end == -1) {
+        buffer.write(text.substring(sourceIndex));
+        break;
+      }
+      buffer.write(text.substring(sourceIndex, start));
+      final plainStart = buffer.length;
+      final marked = text.substring(start + 2, end);
+      buffer.write(marked);
+      ranges.add(_MarkedRange(plainStart, plainStart + marked.length));
+      sourceIndex = end + 2;
+    }
+
+    return _MarkedText(buffer.toString(), ranges);
+  }
+
+  List<TextSpan> _buildMarkedSpans(
+      String visibleText, List<_MarkedRange> ranges) {
+    final spans = <TextSpan>[];
+    var cursor = 0;
+
+    for (final range in ranges) {
+      if (range.start >= visibleText.length) break;
+      if (cursor < range.start) {
+        spans.add(TextSpan(text: visibleText.substring(cursor, range.start)));
+      }
+      final visibleEnd = min(range.end, visibleText.length);
+      if (visibleEnd > range.start) {
+        spans.add(
+          TextSpan(
+            text: visibleText.substring(range.start, visibleEnd),
+            style: widget.style.copyWith(
+              color: const Color(0xFFF1C46B),
+              fontWeight: FontWeight.w700,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        );
+      }
+      cursor = visibleEnd;
+    }
+
+    if (cursor < visibleText.length) {
+      spans.add(TextSpan(text: visibleText.substring(cursor)));
+    }
+    return spans;
+  }
+}
+
+class _MarkedText {
+  final String plainText;
+  final List<_MarkedRange> ranges;
+
+  const _MarkedText(this.plainText, this.ranges);
+}
+
+class _MarkedRange {
+  final int start;
+  final int end;
+
+  const _MarkedRange(this.start, this.end);
 }
 
 class _StatusBar extends StatelessWidget {

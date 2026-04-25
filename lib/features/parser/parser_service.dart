@@ -16,7 +16,7 @@ class ParserService {
     'w',
     'west'
   };
-  static const _stopWords = {
+  static const List<String> _stopWords = [
     'the',
     'a',
     'an',
@@ -34,16 +34,96 @@ class ParserService {
     'toward',
     'towards',
     'through',
-    'over',
     'under',
     'against',
     'between',
     'among',
+  ];
+
+  static const Map<String, CommandVerb> _verbAliases = {
+    'go': CommandVerb.go,
+    'move': CommandVerb.go,
+    'head': CommandVerb.go,
+    'travel': CommandVerb.go,
+    'walk': CommandVerb.walk,
+    'examine': CommandVerb.examine,
+    'look': CommandVerb.examine,
+    'look at': CommandVerb.examine,
+    'inspect': CommandVerb.examine,
+    'read': CommandVerb.examine,
+    'take': CommandVerb.take,
+    'get': CommandVerb.take,
+    'grab': CommandVerb.take,
+    'pick': CommandVerb.take,
+    'pick up': CommandVerb.take,
+    'collect': CommandVerb.collect,
+    'drop': CommandVerb.drop,
+    'put': CommandVerb.drop,
+    'leave': CommandVerb.drop,
+    'place': CommandVerb.drop,
+    'discard': CommandVerb.drop,
+    'use': CommandVerb.use,
+    'deposit': CommandVerb.deposit,
+    'wait': CommandVerb.wait,
+    'smell': CommandVerb.smell,
+    'sniff': CommandVerb.smell,
+    'taste': CommandVerb.taste,
+    'lick': CommandVerb.taste,
+    'arrange': CommandVerb.arrange,
+    'order': CommandVerb.arrange,
+    'combine': CommandVerb.combine,
+    'merge': CommandVerb.combine,
+    'press': CommandVerb.press,
+    'push': CommandVerb.press,
+    'offer': CommandVerb.offer,
+    'give': CommandVerb.offer,
+    'write': CommandVerb.write,
+    'inscribe': CommandVerb.write,
+    'describe': CommandVerb.write,
+    'paint': CommandVerb.write,
+    'draw': CommandVerb.write,
+    'construct': CommandVerb.write,
+    'measure': CommandVerb.measure,
+    'calibrate': CommandVerb.calibrate,
+    'invert': CommandVerb.invert,
+    'reverse': CommandVerb.invert,
+    'confirm': CommandVerb.confirm,
+    'yes': CommandVerb.confirm,
+    'break': CommandVerb.breakObj,
+    'shatter': CommandVerb.breakObj,
+    'smash': CommandVerb.breakObj,
+    'blow': CommandVerb.blow,
+    'set': CommandVerb.setParam,
+    'adjust': CommandVerb.setParam,
+    'drink': CommandVerb.drink,
+    'sip': CommandVerb.drink,
+    'stir': CommandVerb.stir,
+    'mix': CommandVerb.stir,
+    'observe': CommandVerb.observe,
+    'watch': CommandVerb.observe,
+    'enter': CommandVerb.enterValue,
+    'gather': CommandVerb.collect,
+    'decipher': CommandVerb.decipher,
+    'decode': CommandVerb.decipher,
+    'translate': CommandVerb.decipher,
+    'say': CommandVerb.say,
+    'answer': CommandVerb.say,
+    'tell': CommandVerb.say,
+    'speak': CommandVerb.say,
+    'hint': CommandVerb.hint,
+    'clue': CommandVerb.hint,
+    'nudge': CommandVerb.hint,
+    'help': CommandVerb.help,
   };
 
   /// Parse [raw] input and return the best matching [ParsedCommand].
   static ParsedCommand parse(String raw) {
-    final input = raw.trim().toLowerCase();
+    final rawShortcut = raw.trim().toLowerCase();
+    if (rawShortcut == '?') {
+      return ParsedCommand(
+          verb: CommandVerb.help, args: const [], rawInput: raw);
+    }
+    final input = _normalizeInput(raw);
 
     if (input.isEmpty) {
       return ParsedCommand(
@@ -86,14 +166,13 @@ class ParserService {
 
     // ── Multi-word commands ────────────────────────────────────────────────
     final tokens = input.split(RegExp(r'\s+'));
-    final verb = tokens.first;
-    final rest = _stripStopWords(tokens.skip(1).toList());
+    final alias = _matchVerbAlias(tokens);
+    final verb = alias?.verb ?? CommandVerb.unknown;
+    final restStart = alias?.tokenCount ?? 1;
+    final rest = _stripStopWords(tokens.skip(restStart).toList());
 
     switch (verb) {
-      case 'go':
-      case 'move':
-      case 'head':
-      case 'travel':
+      case CommandVerb.go:
         if (rest.isNotEmpty && _directions.contains(rest.first)) {
           return ParsedCommand(
             verb: CommandVerb.go,
@@ -103,7 +182,7 @@ class ParserService {
         }
         return ParsedCommand(verb: CommandVerb.go, args: rest, rawInput: raw);
 
-      case 'walk':
+      case CommandVerb.walk:
         // "walk north" = go north; "walk through" / "walk blindfolded" = walk verb
         if (rest.isNotEmpty && _directions.contains(rest.first)) {
           return ParsedCommand(
@@ -114,156 +193,143 @@ class ParserService {
         }
         return ParsedCommand(verb: CommandVerb.walk, args: rest, rawInput: raw);
 
-      case 'examine':
-      case 'look':
-      case 'inspect':
-      case 'read':
+      case CommandVerb.examine:
         return ParsedCommand(
             verb: CommandVerb.examine, args: rest, rawInput: raw);
 
-      case 'take':
-      case 'get':
-      case 'pick':
+      case CommandVerb.take:
         return ParsedCommand(verb: CommandVerb.take, args: rest, rawInput: raw);
 
-      case 'drop':
-      case 'put':
-      case 'leave':
-      case 'place':
-      case 'discard':
+      case CommandVerb.drop:
         return ParsedCommand(verb: CommandVerb.drop, args: rest, rawInput: raw);
 
-      case 'use':
+      case CommandVerb.use:
         return ParsedCommand(verb: CommandVerb.use, args: rest, rawInput: raw);
 
-      case 'deposit':
+      case CommandVerb.deposit:
         return ParsedCommand(
             verb: CommandVerb.deposit, args: rest, rawInput: raw);
 
-      case 'wait':
+      case CommandVerb.wait:
         return ParsedCommand(verb: CommandVerb.wait, args: rest, rawInput: raw);
 
-      case 'smell':
-      case 'sniff':
+      case CommandVerb.smell:
         return ParsedCommand(
             verb: CommandVerb.smell, args: rest, rawInput: raw);
 
-      case 'taste':
-      case 'lick':
+      case CommandVerb.taste:
         return ParsedCommand(
             verb: CommandVerb.taste, args: rest, rawInput: raw);
 
-      case 'arrange':
-      case 'order':
+      case CommandVerb.arrange:
         return ParsedCommand(
             verb: CommandVerb.arrange, args: rest, rawInput: raw);
 
-      case 'combine':
-      case 'merge':
+      case CommandVerb.combine:
         return ParsedCommand(
             verb: CommandVerb.combine, args: rest, rawInput: raw);
 
-      case 'press':
-      case 'push':
+      case CommandVerb.press:
         return ParsedCommand(
             verb: CommandVerb.press, args: rest, rawInput: raw);
 
-      case 'offer':
-      case 'give':
+      case CommandVerb.offer:
         return ParsedCommand(
             verb: CommandVerb.offer, args: rest, rawInput: raw);
 
-      case 'write':
-      case 'inscribe':
-      case 'describe':
-      case 'paint':
-      case 'draw':
-      case 'construct':
+      case CommandVerb.write:
         return ParsedCommand(
             verb: CommandVerb.write, args: rest, rawInput: raw);
 
-      case 'measure':
+      case CommandVerb.measure:
         return ParsedCommand(
             verb: CommandVerb.measure, args: rest, rawInput: raw);
 
-      case 'calibrate':
+      case CommandVerb.calibrate:
         return ParsedCommand(
             verb: CommandVerb.calibrate, args: rest, rawInput: raw);
 
-      case 'invert':
-      case 'reverse':
+      case CommandVerb.invert:
         return ParsedCommand(
             verb: CommandVerb.invert, args: rest, rawInput: raw);
 
-      case 'confirm':
-      case 'yes':
+      case CommandVerb.confirm:
         return ParsedCommand(
             verb: CommandVerb.confirm, args: rest, rawInput: raw);
 
-      case 'break':
-      case 'shatter':
-      case 'smash':
+      case CommandVerb.breakObj:
         return ParsedCommand(
             verb: CommandVerb.breakObj, args: rest, rawInput: raw);
 
-      case 'blow':
+      case CommandVerb.blow:
         return ParsedCommand(verb: CommandVerb.blow, args: rest, rawInput: raw);
 
-      case 'set':
-      case 'adjust':
+      case CommandVerb.setParam:
         return ParsedCommand(
             verb: CommandVerb.setParam, args: rest, rawInput: raw);
 
-      case 'drink':
-      case 'sip':
+      case CommandVerb.drink:
         return ParsedCommand(
             verb: CommandVerb.drink, args: rest, rawInput: raw);
 
-      case 'stir':
-      case 'mix':
+      case CommandVerb.stir:
         return ParsedCommand(verb: CommandVerb.stir, args: rest, rawInput: raw);
 
-      case 'observe':
-      case 'watch':
+      case CommandVerb.observe:
         return ParsedCommand(
             verb: CommandVerb.observe, args: rest, rawInput: raw);
 
-      case 'enter':
+      case CommandVerb.enterValue:
         return ParsedCommand(
             verb: CommandVerb.enterValue, args: rest, rawInput: raw);
 
-      case 'collect':
-      case 'gather':
+      case CommandVerb.collect:
         return ParsedCommand(
             verb: CommandVerb.collect, args: rest, rawInput: raw);
 
-      case 'decipher':
-      case 'decode':
-      case 'translate':
+      case CommandVerb.decipher:
         return ParsedCommand(
             verb: CommandVerb.decipher, args: rest, rawInput: raw);
 
-      case 'say':
-      case 'answer':
-      case 'tell':
-      case 'speak':
+      case CommandVerb.say:
         return ParsedCommand(verb: CommandVerb.say, args: rest, rawInput: raw);
 
-      case 'hint':
-      case 'clue':
-      case 'nudge':
+      case CommandVerb.hint:
         return ParsedCommand(verb: CommandVerb.hint, args: rest, rawInput: raw);
 
-      case 'help':
+      case CommandVerb.help:
         return ParsedCommand(
             verb: CommandVerb.help, args: const [], rawInput: raw);
 
-      default:
+      case CommandVerb.inventory:
+      case CommandVerb.unknown:
         return ParsedCommand(
             verb: CommandVerb.unknown,
-            args: tokens.skip(1).toList(),
+            args: _stripStopWords(tokens.skip(1).toList()),
             rawInput: raw);
     }
+  }
+
+  static String _normalizeInput(String raw) {
+    return raw
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r"[’'`]"), '')
+        .replaceAll(RegExp(r'[^a-z0-9\s]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+  static _VerbAliasMatch? _matchVerbAlias(List<String> tokens) {
+    for (var size = 3; size >= 1; size--) {
+      if (tokens.length < size) continue;
+      final phrase = tokens.take(size).join(' ');
+      final verb = _verbAliases[phrase];
+      if (verb != null) {
+        return _VerbAliasMatch(verb: verb, tokenCount: size);
+      }
+    }
+    return null;
   }
 
   static String _normalizeDir(String d) {
@@ -283,4 +349,11 @@ class ParserService {
 
   static List<String> _stripStopWords(List<String> tokens) =>
       tokens.where((t) => !_stopWords.contains(t)).toList();
+}
+
+class _VerbAliasMatch {
+  final CommandVerb verb;
+  final int tokenCount;
+
+  const _VerbAliasMatch({required this.verb, required this.tokenCount});
 }
