@@ -40,7 +40,9 @@ void main() {
   // ── 1. Background images ──────────────────────────────────────────────────
 
   group('background images', () {
-    test('all background asset files declared in BackgroundService exist on disk', () {
+    test(
+        'all background asset files declared in BackgroundService exist on disk',
+        () {
       for (final asset in BackgroundService.allBackgroundAssets) {
         expect(
           File(asset).existsSync(),
@@ -75,12 +77,14 @@ void main() {
         expect(
           File(entry.value).existsSync(),
           isTrue,
-          reason: 'Missing ambience asset for key "${entry.key}": ${entry.value}',
+          reason:
+              'Missing ambience asset for key "${entry.key}": ${entry.value}',
         );
       }
     });
 
-    test('all explicit engine triggers are registered in AudioTrackCatalog', () {
+    test('all explicit engine triggers are registered in AudioTrackCatalog',
+        () {
       for (final trigger in _explicitTriggers) {
         expect(
           AudioTrackCatalog.isExplicitTrack(trigger),
@@ -101,7 +105,9 @@ void main() {
       }
     });
 
-    test('mood triggers are the expected string constants (no file lookup needed)', () {
+    test(
+        'mood triggers are the expected string constants (no file lookup needed)',
+        () {
       // Just assert the known strings are handled — AudioService.handleTrigger
       // short-circuits these without loading any asset.
       expect(_moodTriggers, containsAll(['calm', 'anxious']));
@@ -118,7 +124,8 @@ void main() {
         expect(
           File(entry.value).existsSync(),
           isTrue,
-          reason: 'SFX asset for "${entry.key}" not found on disk: ${entry.value}',
+          reason:
+              'SFX asset for "${entry.key}" not found on disk: ${entry.value}',
         );
       }
     });
@@ -137,7 +144,8 @@ void main() {
         expect(
           asset,
           isNotNull,
-          reason: 'Track key "$trackKey" for node "$nodeId" has no asset mapping',
+          reason:
+              'Track key "$trackKey" for node "$nodeId" has no asset mapping',
         );
         expect(
           File(asset!).existsSync(),
@@ -178,7 +186,8 @@ void main() {
 
           _assertNodeAssets(nodeId);
 
-          final exits = gameExitsForNode(nodeId).values
+          final exits = gameExitsForNode(nodeId)
+              .values
               .where(reachable.contains)
               .toList()
             ..shuffle(rng);

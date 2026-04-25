@@ -9,22 +9,26 @@ void main() {
   group('audio manifest consistency', () {
     final manifestFile = File('assets/audio/manifest.json');
 
-    test('declares every runtime audio asset except synthetic silence', () async {
+    test('declares every runtime audio asset except synthetic silence',
+        () async {
       expect(manifestFile.existsSync(), isTrue);
 
-      final jsonMap = jsonDecode(await manifestFile.readAsString()) as Map<String, dynamic>;
+      final jsonMap =
+          jsonDecode(await manifestFile.readAsString()) as Map<String, dynamic>;
       final tracks = jsonMap['tracks'] as List<dynamic>;
       final manifestAssets = {
         for (final track in tracks)
           (track as Map<String, dynamic>)['asset'] as String,
       };
 
-      final runtimeAssets = Set<String>.from(AudioTrackCatalog.ambienceAssets.values);
+      final runtimeAssets =
+          Set<String>.from(AudioTrackCatalog.ambienceAssets.values);
       expect(runtimeAssets.difference(manifestAssets), isEmpty);
     });
 
     test('uses unique keys in the manifest', () async {
-      final jsonMap = jsonDecode(await manifestFile.readAsString()) as Map<String, dynamic>;
+      final jsonMap =
+          jsonDecode(await manifestFile.readAsString()) as Map<String, dynamic>;
       final tracks = jsonMap['tracks'] as List<dynamic>;
       final keys = [
         for (final track in tracks)

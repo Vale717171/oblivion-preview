@@ -13,10 +13,10 @@
 // round-trip without platform channels or Riverpod container setup.
 //
 // The four-node journey tested:
-//   1. intro_void      (sector: soglia   — node override  → 'soglia')
-//   2. la_soglia       (sector: soglia   — node override  → 'soglia')
-//   3. garden_cypress  (sector: giardino — sector base    → 'giardino')
-//   4. garden_fountain (sector: giardino — room override  → 'giardino_fountain')
+//   1. intro_void      (sector: threshold   — node override  → 'threshold')
+//   2. threshold       (sector: threshold   — node override  → 'threshold')
+//   3. garden_cypress  (sector: garden — sector base    → 'garden')
+//   4. garden_fountain (sector: garden — room override  → 'garden_fountain')
 
 import 'dart:convert';
 
@@ -46,19 +46,19 @@ GameState _fromDbRow(Map<String, Object?> row) => GameState.fromRow(row);
 void main() {
   // The four nodes visited during this simulated play session.
   const journey = <String>[
-    'intro_void',       // starting position
-    'la_soglia',        // threshold — prologue ends
-    'garden_cypress',   // Garden sector, main plaza
-    'garden_fountain',  // Garden sector, fountain room (final node before save)
+    'intro_void', // starting position
+    'threshold', // threshold — prologue ends
+    'garden_cypress', // Garden sector, main plaza
+    'garden_fountain', // Garden sector, fountain room (final node before save)
   ];
 
   // Expected audio tracks for each node in the journey.
   // Values must match AudioTrackCatalog._nodeOverrides / _sectorBaseKeys.
   const expectedTracks = <String, String>{
-    'intro_void':       'soglia',            // node override
-    'la_soglia':        'soglia',            // node override
-    'garden_cypress':   'giardino',          // sector base
-    'garden_fountain':  'giardino_fountain', // room override
+    'intro_void': 'threshold', // node override
+    'threshold': 'threshold', // node override
+    'garden_cypress': 'garden', // sector base
+    'garden_fountain': 'garden_fountain', // room override
   };
 
   // ── 1. Audio track resolution ─────────────────────────────────────────────
@@ -70,7 +70,8 @@ void main() {
         expect(
           track,
           equals(expectedTracks[node]),
-          reason: 'Node "$node" must resolve to track "${expectedTracks[node]}"',
+          reason:
+              'Node "$node" must resolve to track "${expectedTracks[node]}"',
         );
       });
     }
@@ -84,13 +85,12 @@ void main() {
       test('step ${i + 1}: $node survives save → reload', () {
         // Build realistic game variables that accumulate as the journey progresses.
         final state = GameState(
-          currentNode:      node,
+          currentNode: node,
           completedPuzzles: i > 0 ? const {'intro_complete'} : const {},
-          puzzleCounters:   {'zone_encounters': i, 'consecutive_transits': i},
-          inventory:        i > 1
-              ? const ['notebook', 'ataraxia']
-              : const ['notebook'],
-          psychoWeight:     i * 8,
+          puzzleCounters: {'zone_encounters': i, 'consecutive_transits': i},
+          inventory:
+              i > 1 ? const ['notebook', 'ataraxia'] : const ['notebook'],
+          psychoWeight: i * 8,
         );
 
         // Save (serialise) → simulate reset → reload (deserialise).
@@ -116,14 +116,14 @@ void main() {
         final trackBeforeSave = AudioTrackCatalog.trackForNode(finalNode);
 
         final stateBeforeSave = GameState(
-          currentNode:      finalNode,
+          currentNode: finalNode,
           completedPuzzles: const {'intro_complete', 'leaves_arranged'},
-          puzzleCounters:   const {
+          puzzleCounters: const {
             'zone_encounters': 2,
             'consecutive_transits': 1,
           },
-          inventory:        const ['notebook', 'ataraxia'],
-          psychoWeight:     24,
+          inventory: const ['notebook', 'ataraxia'],
+          psychoWeight: 24,
         );
 
         // ── Step 2: save ────────────────────────────────────────────────────
@@ -152,15 +152,17 @@ void main() {
       },
     );
 
-    test('game variables (puzzles, counters, inventory, weight) are identical after reload', () {
+    test(
+        'game variables (puzzles, counters, inventory, weight) are identical after reload',
+        () {
       const node = 'garden_fountain';
 
       final original = GameState(
-        currentNode:      node,
+        currentNode: node,
         completedPuzzles: const {'intro_complete', 'leaves_arranged'},
-        puzzleCounters:   const {'zone_encounters': 3, 'consecutive_transits': 2},
-        inventory:        const ['notebook', 'ataraxia', 'the constant'],
-        psychoWeight:     35,
+        puzzleCounters: const {'zone_encounters': 3, 'consecutive_transits': 2},
+        inventory: const ['notebook', 'ataraxia', 'the constant'],
+        psychoWeight: 35,
       );
 
       final restored = _fromDbRow(_toDbRow(original));
@@ -175,13 +177,14 @@ void main() {
           reason: 'psychoWeight must not change across persistence');
     });
 
-    test('empty puzzles and counters serialise to empty collections (not null)', () {
+    test('empty puzzles and counters serialise to empty collections (not null)',
+        () {
       final state = GameState(
-        currentNode:      'intro_void',
+        currentNode: 'intro_void',
         completedPuzzles: const {},
-        puzzleCounters:   const {},
-        inventory:        const ['notebook'],
-        psychoWeight:     0,
+        puzzleCounters: const {},
+        inventory: const ['notebook'],
+        psychoWeight: 0,
       );
 
       final restored = _fromDbRow(_toDbRow(state));

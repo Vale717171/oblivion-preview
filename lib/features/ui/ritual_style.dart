@@ -126,7 +126,7 @@ SectorVisualProfile visualProfileForNode(String nodeId) {
 }
 
 String _sectorForNode(String nodeId) {
-  if (nodeId == 'intro_void' || nodeId == 'la_soglia') return 'Threshold';
+  if (nodeId == 'intro_void' || nodeId == 'threshold') return 'Threshold';
   if (nodeId.startsWith('garden')) return 'Garden';
   if (nodeId.startsWith('obs_')) return 'Observatory';
   if (nodeId.startsWith('gal_') || nodeId.startsWith('gallery_'))

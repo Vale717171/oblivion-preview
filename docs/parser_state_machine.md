@@ -73,7 +73,7 @@ take [oggetto]                — raccolta (aumenta peso se oggetto materiale)
 drop [oggetto]                — abbandono
 use [oggetto]                 — interazione
 wait / z                      — attesa (rilevante per alcuni enigmi)
-deposit everything            — azione chiave del Settore Giardino
+deposit everything            — azione chiave del Settore Garden
 smell [oggetto]               — trigger proustiano
 taste [oggetto]               — trigger proustiano (Laboratorio)
 arrange [argomento]           — enigma foglie (Cypress Avenue)

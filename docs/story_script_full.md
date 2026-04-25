@@ -23,7 +23,7 @@ Gameplay text is kept in English (as in-game), while structure notes are in Ital
 [NARRATOR: ALL THAT IS]
 - Variable response (sector: threshold / universal), often with citation.
 
-### Scene 2 — `la_soglia` (The Threshold)
+### Scene 2 — `threshold` (The Threshold)
 [ARCHIVE]
 "A circular rotunda... Four doors at cardinal points... pentagonal pedestal with five recesses..."
 
@@ -275,7 +275,7 @@ Flow:
 ## ACT III — Fifth Sector (Memory)
 
 ### Entrance gate from Threshold
-[PLAYER] `go up` from `la_soglia`
+[PLAYER] `go up` from `threshold`
 
 Required:
 - all 4 simulacra in inventory;

@@ -27,8 +27,8 @@ Check at least:
 - Bach starts with the title/title reveal.
 - First typed command causes Bach to fade gradually.
 - Ambient sound or evocative noise continues after Bach ends.
-- The player can reach La Soglia.
-- The player can reach Il Giardino.
+- The player can reach Threshold.
+- The player can reach Garden.
 - The first Bach revelation triggers only at the intended moment.
 - The preview ending appears.
 - Later sectors are not reachable from the public slice.

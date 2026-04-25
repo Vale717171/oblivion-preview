@@ -2,11 +2,11 @@
 // Maps sector/node IDs to background image asset paths.
 
 class BackgroundService {
-  static const String defaultBackgroundAsset = 'assets/images/bg_soglia.jpg';
+  static const String defaultBackgroundAsset = 'assets/images/threshold_bg.jpg';
 
   static const List<String> allBackgroundAssets = [
-    'assets/images/bg_soglia.jpg',
-    'assets/images/bg_giardino.jpg',
+    'assets/images/threshold_bg.jpg',
+    'assets/images/garden_bg.jpg',
     'assets/images/bg_osservatorio.jpg',
     'assets/images/bg_galleria.jpg',
     'assets/images/bg_laboratorio.jpg',
@@ -18,10 +18,10 @@ class BackgroundService {
   /// if no image is mapped for that sector.
   static String? getBackgroundForSector(String sectorId) {
     switch (sectorId) {
-      case 'soglia':
-        return 'assets/images/bg_soglia.jpg';
-      case 'giardino':
-        return 'assets/images/bg_giardino.jpg';
+      case 'threshold':
+        return 'assets/images/threshold_bg.jpg';
+      case 'garden':
+        return 'assets/images/garden_bg.jpg';
       case 'osservatorio':
         return 'assets/images/bg_osservatorio.jpg';
       case 'galleria':
@@ -54,11 +54,11 @@ class BackgroundService {
 
   static String _sectorForNode(String nodeId) {
     if (nodeId == 'intro_void' ||
-        nodeId == 'la_soglia' ||
+        nodeId == 'threshold' ||
         nodeId == 'preview_epilogue') {
-      return 'soglia';
+      return 'threshold';
     }
-    if (nodeId.startsWith('garden')) return 'giardino';
+    if (nodeId.startsWith('garden')) return 'garden';
     if (nodeId.startsWith('obs_')) return 'osservatorio';
     if (nodeId.startsWith('gal_') || nodeId.startsWith('gallery_')) {
       return 'galleria';

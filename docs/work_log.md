@@ -4,7 +4,7 @@
 
 - Reframed repository documentation around the browser preview.
 - Reframed the project around the Flutter Web preview for Itch.io.
-- Clarified the public slice: Splash, Home, La Soglia, Il Giardino, first Bach revelation, preview ending.
+- Clarified the public slice: Splash, Home, Threshold, Garden, first Bach revelation, preview ending.
 - Kept the Demiurge wrong-command response system as a central design pillar.
 - Kept audio polish focused on title Bach, fade-out on interaction, ambient continuation, and revelation timing.
 

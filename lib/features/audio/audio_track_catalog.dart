@@ -2,14 +2,14 @@ class AudioTrackCatalog {
   static const Map<String, String> ambienceAssets = {
     // Ambient layer — low-volume atmospheric echo, played underneath Bach BGM.
     'universal_ambient': 'assets/audio/echo_chamber.ogg',
-    'ambient_soglia': 'assets/audio/ambient_soglia_air.ogg',
-    'ambient_giardino': 'assets/audio/ambient_giardino_water.ogg',
+    'ambient_threshold': 'assets/audio/ambient_threshold_air.ogg',
+    'ambient_garden': 'assets/audio/ambient_garden_water.ogg',
     'ambient_osservatorio': 'assets/audio/ambient_osservatorio_metal.ogg',
 
     // Sector bases
-    'soglia': 'assets/audio/bach_bwv846_soglia.ogg',
-    'title_soglia': 'assets/audio/bach_aria_goldberg.ogg',
-    'giardino': 'assets/audio/bach_goldberg_giardino.ogg',
+    'threshold': 'assets/audio/bach_bwv846_threshold.ogg',
+    'title_threshold': 'assets/audio/bach_aria_goldberg.ogg',
+    'garden': 'assets/audio/bach_goldberg_garden.ogg',
     'osservatorio': 'assets/audio/bach_contrapunctus_observatory.ogg',
     'galleria': 'assets/audio/bach_bwv846_galleria.ogg',
     'laboratorio': 'assets/audio/bach_bwv1008_laboratorio.ogg',
@@ -17,8 +17,8 @@ class AudioTrackCatalog {
     'zona': 'assets/audio/bach_fugue_883_zona.ogg',
 
     // Room overrides
-    'giardino_fountain': 'assets/audio/garden_fountain_variation.ogg',
-    'giardino_stelae': 'assets/audio/garden_stelae_variation.ogg',
+    'garden_fountain': 'assets/audio/garden_fountain_variation.ogg',
+    'garden_stelae': 'assets/audio/garden_stelae_variation.ogg',
     'osservatorio_calibration':
         'assets/audio/observatory_calibration_variation.ogg',
     'osservatorio_dome': 'assets/audio/observatory_dome_variation.ogg',
@@ -37,8 +37,8 @@ class AudioTrackCatalog {
   };
 
   static const Map<String, String> _sectorBaseKeys = {
-    'soglia': 'soglia',
-    'giardino': 'giardino',
+    'threshold': 'threshold',
+    'garden': 'garden',
     'osservatorio': 'osservatorio',
     'galleria': 'galleria',
     'laboratorio': 'laboratorio',
@@ -47,11 +47,11 @@ class AudioTrackCatalog {
   };
 
   static const Map<String, String> _nodeOverrides = {
-    'intro_void': 'soglia',
-    'la_soglia': 'soglia',
+    'intro_void': 'threshold',
+    'threshold': 'threshold',
     'preview_epilogue': 'aria_goldberg',
-    'garden_fountain': 'giardino_fountain',
-    'garden_stelae': 'giardino_stelae',
+    'garden_fountain': 'garden_fountain',
+    'garden_stelae': 'garden_stelae',
     'obs_calibration': 'osservatorio_calibration',
     'obs_dome': 'osservatorio_dome',
     'gallery_dark': 'galleria_dark',
@@ -79,8 +79,8 @@ class AudioTrackCatalog {
   // between curated masters without rewriting the playback graph.
   // Positive values lift quieter masters; negative values tame hotter ones.
   static const Map<String, double> _musicVolumeBiases = {
-    'soglia': 0.10,
-    'giardino': 0.04,
+    'threshold': 0.10,
+    'garden': 0.04,
     'galleria': 0.03,
     'laboratorio': -0.03,
     'memoria': 0.06,
@@ -111,17 +111,17 @@ class AudioTrackCatalog {
   /// special tracks such as oblivion/silence are also excluded by the caller).
   static String? ambientKeyForSector(String sector) {
     if (sector == 'memoria' || sector == 'la_zona') return null;
-    if (sector == 'soglia') return 'ambient_soglia';
+    if (sector == 'threshold') return 'ambient_threshold';
     // Two pilot sectors now use true ambience beds instead of Bach variations.
-    if (sector == 'giardino') return 'ambient_giardino';
+    if (sector == 'garden') return 'ambient_garden';
     if (sector == 'osservatorio') return 'ambient_osservatorio';
     return 'universal_ambient';
   }
 
   /// Returns the sector family for a track key.
   ///
-  /// Room-override keys share their base sector prefix (e.g. 'giardino_fountain'
-  /// → 'giardino'), so same-sector room transitions are not treated as sector
+  /// Room-override keys share their base sector prefix (e.g. 'garden_fountain'
+  /// → 'garden'), so same-sector room transitions are not treated as sector
   /// changes. Special tracks (siciliano, aria_goldberg, oblivion, silence) each
   /// act as their own family so they never trigger the long crossfade.
   static String sectorFamilyForTrackKey(String key) {
@@ -148,11 +148,11 @@ class AudioTrackCatalog {
 
   static String sectorForNode(String nodeId) {
     if (nodeId == 'intro_void' ||
-        nodeId == 'la_soglia' ||
+        nodeId == 'threshold' ||
         nodeId == 'preview_epilogue') {
-      return 'soglia';
+      return 'threshold';
     }
-    if (nodeId.startsWith('garden')) return 'giardino';
+    if (nodeId.startsWith('garden')) return 'garden';
     if (nodeId.startsWith('obs_')) return 'osservatorio';
     if (nodeId.startsWith('gal_') || nodeId.startsWith('gallery_')) {
       return 'galleria';
@@ -165,6 +165,6 @@ class AudioTrackCatalog {
       return 'memoria';
     }
     if (nodeId == 'la_zona') return 'la_zona';
-    return 'soglia';
+    return 'threshold';
   }
 }

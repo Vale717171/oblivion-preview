@@ -66,7 +66,8 @@ class _StaticPsychoProfileNotifier extends PsychoProfileNotifier {
       );
 
   @override
-  Future<void> updateParameter({int? lucidity, int? oblivionLevel, int? anxiety}) async {}
+  Future<void> updateParameter(
+      {int? lucidity, int? oblivionLevel, int? anxiety}) async {}
 
   @override
   Future<void> resetProfile() async {}
@@ -110,13 +111,15 @@ class _StaticAppSettingsNotifier extends AppSettingsNotifier {
 }
 
 void main() {
-  testWidgets('submitting while typewriter is active still sends the command', (tester) async {
+  testWidgets('submitting while typewriter is active still sends the command',
+      (tester) async {
     final commands = <String>[];
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          gameEngineProvider.overrideWith(() => _RecordingGameEngineNotifier(commands)),
+          gameEngineProvider
+              .overrideWith(() => _RecordingGameEngineNotifier(commands)),
           gameStateProvider.overrideWith(_StaticGameStateNotifier.new),
           psychoProfileProvider.overrideWith(_StaticPsychoProfileNotifier.new),
           appSettingsProvider.overrideWith(_StaticAppSettingsNotifier.new),

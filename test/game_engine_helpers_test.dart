@@ -5,7 +5,7 @@ import 'package:archive_of_oblivion/features/game/game_engine_provider.dart';
 void main() {
   group('game metadata helpers', () {
     test('exposes readable node titles', () {
-      expect(gameNodeTitle('la_soglia'), 'The Threshold');
+      expect(gameNodeTitle('threshold'), 'The Threshold');
       expect(gameNodeTitle('missing_node'), 'The Archive');
     });
 

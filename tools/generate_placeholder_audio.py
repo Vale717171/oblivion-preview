@@ -21,8 +21,8 @@ DEFAULT_SAMPLE_RATE = 48000
 
 
 TRACK_RECIPES: dict[str, dict[str, float | int | str]] = {
-    "soglia": {"tone": 73.42, "noise": 0.020, "cutoff": 900, "duration": 42},
-    "giardino": {"tone": 196.00, "noise": 0.014, "cutoff": 1800, "duration": 50},
+    "threshold": {"tone": 73.42, "noise": 0.020, "cutoff": 900, "duration": 42},
+    "garden": {"tone": 196.00, "noise": 0.014, "cutoff": 1800, "duration": 50},
     "osservatorio": {"tone": 110.00, "noise": 0.012, "cutoff": 1500, "duration": 52},
     "galleria": {"tone": 164.81, "noise": 0.010, "cutoff": 2200, "duration": 46},
     "laboratorio": {"tone": 92.50, "noise": 0.024, "cutoff": 1200, "duration": 54},
@@ -31,8 +31,8 @@ TRACK_RECIPES: dict[str, dict[str, float | int | str]] = {
     "oblivion": {"tone": 55.00, "noise": 0.035, "cutoff": 600, "duration": 60},
     "siciliano": {"tone": 220.00, "noise": 0.008, "cutoff": 2600, "duration": 36},
     "aria_goldberg": {"tone": 246.94, "noise": 0.006, "cutoff": 3000, "duration": 34},
-    "giardino_fountain": {"tone": 207.65, "noise": 0.016, "cutoff": 2000, "duration": 34},
-    "giardino_stelae": {"tone": 174.61, "noise": 0.013, "cutoff": 1900, "duration": 34},
+    "garden_fountain": {"tone": 207.65, "noise": 0.016, "cutoff": 2000, "duration": 34},
+    "garden_stelae": {"tone": 174.61, "noise": 0.013, "cutoff": 1900, "duration": 34},
     "osservatorio_calibration": {"tone": 123.47, "noise": 0.011, "cutoff": 1300, "duration": 34},
     "osservatorio_dome": {"tone": 98.00, "noise": 0.014, "cutoff": 1100, "duration": 36},
     "galleria_dark": {"tone": 130.81, "noise": 0.014, "cutoff": 1600, "duration": 34},

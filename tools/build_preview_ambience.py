@@ -19,8 +19,8 @@ DEFAULT_DURATION = 180
 
 
 TRACKS = {
-    "ambient_soglia": {
-        "output": "assets/audio/ambient_soglia_air.ogg",
+    "ambient_threshold": {
+        "output": "assets/audio/ambient_threshold_air.ogg",
         "inputs": [
             "anoisesrc=color=pink:sample_rate={sample_rate}:duration={duration}:amplitude=0.8",
             "anoisesrc=color=white:sample_rate={sample_rate}:duration={duration}:amplitude=0.2",
@@ -41,8 +41,8 @@ TRACKS = {
             "afade=t=in:st=0:d=4,afade=t=out:st={fade_out}:d=4"
         ),
     },
-    "ambient_giardino": {
-        "output": "assets/audio/ambient_giardino_water.ogg",
+    "ambient_garden": {
+        "output": "assets/audio/ambient_garden_water.ogg",
         "inputs": [
             "anoisesrc=color=pink:sample_rate={sample_rate}:duration={duration}:amplitude=0.7",
             "anoisesrc=color=brown:sample_rate={sample_rate}:duration={duration}:amplitude=0.4",

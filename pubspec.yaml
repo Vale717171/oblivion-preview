@@ -31,8 +31,8 @@ flutter:
     - assets/texts/
     - assets/texts/demiurge/
     - assets/prompts/
-    - assets/images/bg_soglia.jpg
-    - assets/images/bg_giardino.jpg
+    - assets/images/threshold_bg.jpg
+    - assets/images/garden_bg.jpg
     - assets/images/bg_osservatorio.jpg
     - assets/images/bg_galleria.jpg
     - assets/images/bg_laboratorio.jpg

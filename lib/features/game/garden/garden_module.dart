@@ -118,8 +118,8 @@ class GardenModule {
           'so tall their crowns disappear.',
       exits: {
         'north': 'garden_cypress',
-        'south': 'la_soglia',
-        'back': 'la_soglia'
+        'south': 'threshold',
+        'back': 'threshold'
       },
       examines: {
         'columns': 'Each column bears a single word:\n'
@@ -336,13 +336,13 @@ class GardenModule {
     required GardenStateView state,
   }) {
     if (destNode == 'garden_portico' &&
-        fromNode == 'la_soglia' &&
+        fromNode == 'threshold' &&
         !state.completedPuzzles.contains(arrivalPuzzle)) {
       return const EngineResponse(
         narrativeText: 'The Garden of Epicurus — Portico\n\n'
             'The eastern door yields to a quieter air.\n\n'
             'Stone, cypress, distance. The place does not welcome you with beauty first, but with measure.\n\n'
-            'Ahead, the path waits without urging. Behind you, the Soglia has already receded.',
+            'Ahead, the path waits without urging. Behind you, the Threshold has already receded.',
         newNode: 'garden_portico',
         needsDemiurge: true,
         completePuzzle: arrivalPuzzle,
@@ -443,7 +443,7 @@ class GardenModule {
       );
     }
 
-    if (nodeId == 'la_soglia' &&
+    if (nodeId == 'threshold' &&
         target.contains('pedestal') &&
         state.completedPuzzles.contains(surfacePuzzle) &&
         !state.completedPuzzles.contains('garden_cross_sector_hint')) {

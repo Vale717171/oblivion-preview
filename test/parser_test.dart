@@ -198,7 +198,14 @@ void main() {
   // ── Domain-specific verbs ─────────────────────────────────────────────────
 
   group('write / inscribe / describe / paint / draw / construct', () {
-    for (final verb in ['write', 'inscribe', 'describe', 'paint', 'draw', 'construct']) {
+    for (final verb in [
+      'write',
+      'inscribe',
+      'describe',
+      'paint',
+      'draw',
+      'construct'
+    ]) {
       test('"$verb pentagon" → write [pentagon]', () {
         final cmd = ParserService.parse('$verb pentagon');
         expect(cmd.verb, CommandVerb.write);
@@ -257,46 +264,84 @@ void main() {
   });
 
   group('other domain verbs', () {
-    test('"smell" → smell', () => expect(ParserService.parse('smell').verb, CommandVerb.smell));
-    test('"sniff rose" → smell', () => expect(ParserService.parse('sniff rose').verb, CommandVerb.smell));
-    test('"taste" → taste', () => expect(ParserService.parse('taste').verb, CommandVerb.taste));
+    test('"smell" → smell',
+        () => expect(ParserService.parse('smell').verb, CommandVerb.smell));
+    test(
+        '"sniff rose" → smell',
+        () =>
+            expect(ParserService.parse('sniff rose').verb, CommandVerb.smell));
+    test('"taste" → taste',
+        () => expect(ParserService.parse('taste').verb, CommandVerb.taste));
     test('"measure fluctuation" → measure', () {
       final cmd = ParserService.parse('measure fluctuation');
       expect(cmd.verb, CommandVerb.measure);
       expect(cmd.args, ['fluctuation']);
     });
-    test('"calibrate" → calibrate', () => expect(ParserService.parse('calibrate').verb, CommandVerb.calibrate));
-    test('"invert" → invert', () => expect(ParserService.parse('invert').verb, CommandVerb.invert));
-    test('"reverse image" → invert', () => expect(ParserService.parse('reverse image').verb, CommandVerb.invert));
-    test('"break mirror" → breakObj', () => expect(ParserService.parse('break mirror').verb, CommandVerb.breakObj));
-    test('"shatter glass" → breakObj', () => expect(ParserService.parse('shatter glass').verb, CommandVerb.breakObj));
-    test('"blow" → blow', () => expect(ParserService.parse('blow').verb, CommandVerb.blow));
+    test(
+        '"calibrate" → calibrate',
+        () => expect(
+            ParserService.parse('calibrate').verb, CommandVerb.calibrate));
+    test('"invert" → invert',
+        () => expect(ParserService.parse('invert').verb, CommandVerb.invert));
+    test(
+        '"reverse image" → invert',
+        () => expect(
+            ParserService.parse('reverse image').verb, CommandVerb.invert));
+    test(
+        '"break mirror" → breakObj',
+        () => expect(
+            ParserService.parse('break mirror').verb, CommandVerb.breakObj));
+    test(
+        '"shatter glass" → breakObj',
+        () => expect(
+            ParserService.parse('shatter glass').verb, CommandVerb.breakObj));
+    test('"blow" → blow',
+        () => expect(ParserService.parse('blow').verb, CommandVerb.blow));
     test('"set temperature 37" → setParam', () {
       final cmd = ParserService.parse('set temperature 37');
       expect(cmd.verb, CommandVerb.setParam);
       expect(cmd.args, ['temperature', '37']);
     });
-    test('"adjust" → setParam', () => expect(ParserService.parse('adjust').verb, CommandVerb.setParam));
-    test('"drink" → drink', () => expect(ParserService.parse('drink').verb, CommandVerb.drink));
-    test('"sip water" → drink', () => expect(ParserService.parse('sip water').verb, CommandVerb.drink));
-    test('"stir" → stir', () => expect(ParserService.parse('stir').verb, CommandVerb.stir));
-    test('"mix solution" → stir', () => expect(ParserService.parse('mix solution').verb, CommandVerb.stir));
+    test('"adjust" → setParam',
+        () => expect(ParserService.parse('adjust').verb, CommandVerb.setParam));
+    test('"drink" → drink',
+        () => expect(ParserService.parse('drink').verb, CommandVerb.drink));
+    test('"sip water" → drink',
+        () => expect(ParserService.parse('sip water').verb, CommandVerb.drink));
+    test('"stir" → stir',
+        () => expect(ParserService.parse('stir').verb, CommandVerb.stir));
+    test(
+        '"mix solution" → stir',
+        () =>
+            expect(ParserService.parse('mix solution').verb, CommandVerb.stir));
     test('"enter 137" → enterValue [137]', () {
       final cmd = ParserService.parse('enter 137');
       expect(cmd.verb, CommandVerb.enterValue);
       expect(cmd.args, ['137']);
     });
-    test('"collect fragments" → collect', () => expect(ParserService.parse('collect fragments').verb, CommandVerb.collect));
-    test('"gather" → collect', () => expect(ParserService.parse('gather').verb, CommandVerb.collect));
-    test('"decipher text" → decipher', () => expect(ParserService.parse('decipher text').verb, CommandVerb.decipher));
-    test('"decode" → decipher', () => expect(ParserService.parse('decode').verb, CommandVerb.decipher));
-    test('"deposit" → deposit', () => expect(ParserService.parse('deposit').verb, CommandVerb.deposit));
+    test(
+        '"collect fragments" → collect',
+        () => expect(ParserService.parse('collect fragments').verb,
+            CommandVerb.collect));
+    test('"gather" → collect',
+        () => expect(ParserService.parse('gather').verb, CommandVerb.collect));
+    test(
+        '"decipher text" → decipher',
+        () => expect(
+            ParserService.parse('decipher text').verb, CommandVerb.decipher));
+    test('"decode" → decipher',
+        () => expect(ParserService.parse('decode').verb, CommandVerb.decipher));
+    test('"deposit" → deposit',
+        () => expect(ParserService.parse('deposit').verb, CommandVerb.deposit));
     test('"arrange leaves" → arrange', () {
       final cmd = ParserService.parse('arrange leaves');
       expect(cmd.verb, CommandVerb.arrange);
       expect(cmd.args, ['leaves']);
     });
-    test('"order stones" → arrange', () => expect(ParserService.parse('order stones').verb, CommandVerb.arrange));
+    test(
+        '"order stones" → arrange',
+        () => expect(
+            ParserService.parse('order stones').verb, CommandVerb.arrange));
     test('"use key" → use [key]', () {
       final cmd = ParserService.parse('use key');
       expect(cmd.verb, CommandVerb.use);
@@ -328,7 +373,8 @@ void main() {
       expect(cmd.args, ['key', 'door']);
     });
 
-    test('"combine a lens to mercury" strips "a" and "to" → [lens, mercury]', () {
+    test('"combine a lens to mercury" strips "a" and "to" → [lens, mercury]',
+        () {
       final cmd = ParserService.parse('combine a lens to mercury');
       expect(cmd.verb, CommandVerb.combine);
       expect(cmd.args, ['lens', 'mercury']);
@@ -377,12 +423,14 @@ void main() {
   // ── Case insensitivity ────────────────────────────────────────────────────
 
   group('case insensitivity', () {
-    test('"LOOK" → examine', () => expect(ParserService.parse('LOOK').verb, CommandVerb.examine));
+    test('"LOOK" → examine',
+        () => expect(ParserService.parse('LOOK').verb, CommandVerb.examine));
     test('"Go North" → go north', () {
       final cmd = ParserService.parse('Go North');
       expect(cmd.verb, CommandVerb.go);
       expect(cmd.args.first, 'north');
     });
-    test('"WAIT" → wait', () => expect(ParserService.parse('WAIT').verb, CommandVerb.wait));
+    test('"WAIT" → wait',
+        () => expect(ParserService.parse('WAIT').verb, CommandVerb.wait));
   });
 }

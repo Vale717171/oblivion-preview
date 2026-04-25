@@ -95,7 +95,7 @@ class DemiurgeService {
 
   // Sector keys matching JSON file names in assets/texts/demiurge/.
   static const List<String> sectorKeys = [
-    'giardino',
+    'garden',
     'osservatorio',
     'galleria',
     'laboratorio',
@@ -103,7 +103,7 @@ class DemiurgeService {
   ];
 
   static const List<String> previewSectorKeys = [
-    'giardino',
+    'garden',
     'universale',
   ];
 
@@ -205,8 +205,8 @@ class DemiurgeService {
 
   /// Maps a game node ID to its Demiurge sector key.
   static String sectorForNode(String nodeId) {
-    if (nodeId.startsWith('garden') || nodeId == 'la_soglia') {
-      return 'giardino';
+    if (nodeId.startsWith('garden') || nodeId == 'threshold') {
+      return 'garden';
     }
     if (nodeId.startsWith('obs_')) return 'osservatorio';
     if (nodeId.startsWith('gal_')) return 'galleria';

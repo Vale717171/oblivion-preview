@@ -94,7 +94,7 @@ const Map<String, NodeDef> _nodes = {
         'Only a luminescence that comes from everywhere and nowhere.\n\n'
         'In your pocket: a small empty Notebook.\n\n'
         'A path forms ahead.',
-    exits: {'north': 'la_soglia', 'forward': 'la_soglia', 'ahead': 'la_soglia'},
+    exits: {'north': 'threshold', 'forward': 'threshold', 'ahead': 'threshold'},
     examines: {
       'notebook': 'A small notebook. Pages perfectly blank. '
           'The cover bears a symbol you almost recognise — then do not.',
@@ -104,7 +104,7 @@ const Map<String, NodeDef> _nodes = {
   ),
 
   // ── The Threshold (hub) ──────────────────────────────────────────────────────
-  'la_soglia': NodeDef(
+  'threshold': NodeDef(
     title: 'The Threshold',
     description: 'A circular rotunda of black marble veined with silver.\n\n'
         'Four doors at the cardinal points: amber to the north, '
@@ -255,7 +255,7 @@ const Map<String, NodeDef> _nodes = {
         'A corridor that is also a room. '
         'The walls meet at an angle that should not exist.\n\n'
         'Something is asking you something.',
-    exits: {'back': 'la_soglia'},
+    exits: {'back': 'threshold'},
     examines: {
       'geometry': 'The walls agree only in the angle they refuse to make.',
       'walls': 'Present — but defined by their own impossibility.',
@@ -931,7 +931,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
         puzzles: withPlayer.completedPuzzles,
       );
       final thresholdSignal = thresholdSignalCandidate != null &&
-              ((savedNodeId == 'la_soglia' && currentNodeId != 'la_soglia') ||
+              ((savedNodeId == 'threshold' && currentNodeId != 'threshold') ||
                   thresholdSignalCandidate != previousThresholdSignal)
           ? thresholdSignalCandidate
           : null;
@@ -1252,7 +1252,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     }
     final direction = cmd.args.first;
 
-    if (kIsPreviewBuild && nodeId == 'la_soglia') {
+    if (kIsPreviewBuild && nodeId == 'threshold') {
       final previewBlock = _previewThresholdBlock(direction);
       if (previewBlock != null) {
         return EngineResponse(narrativeText: previewBlock);
@@ -1260,7 +1260,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     }
 
     // Special: Quinto Settore requires all four simulacra
-    if (direction == 'up' && nodeId == 'la_soglia') {
+    if (direction == 'up' && nodeId == 'threshold') {
       final hasAll = _simulacraNames.every((n) => s.inventory.contains(n));
       if (!hasAll) {
         final missing =
@@ -2861,7 +2861,7 @@ bool gameTransitEligibleForZone(String fromNodeId, String destNodeId) {
 
 String gameSectorLabel(String nodeId) {
   if (nodeId == 'intro_void' ||
-      nodeId == 'la_soglia' ||
+      nodeId == 'threshold' ||
       nodeId == 'preview_epilogue') {
     return 'Threshold';
   }

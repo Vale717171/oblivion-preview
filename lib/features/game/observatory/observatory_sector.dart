@@ -75,7 +75,7 @@ final SectorContract observatorySectorContract = SectorContract(
   exitGates: ObservatoryModule.exitGates,
   gateHints: ObservatoryModule.gateHints,
   handlesNode: (nodeId) =>
-      ObservatoryModule.isObservatoryNode(nodeId) || nodeId == 'la_soglia',
+      ObservatoryModule.isObservatoryNode(nodeId) || nodeId == 'threshold',
   buildStateView: _buildObservatoryState,
   handleCommand: _handleObservatoryCommand,
   onEnterNode: _onEnterObservatoryNode,

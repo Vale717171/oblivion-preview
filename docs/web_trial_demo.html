@@ -325,10 +325,10 @@
         sector: 'Threshold',
         title: 'Awakening',
         text: 'Silence.\n\nThen — awareness.\n\nYou exist. You do not know why. A small empty notebook waits in your pocket. Ahead, a path forms where no path had been.',
-        exits: { north: 'la_soglia', forward: 'la_soglia', ahead: 'la_soglia' },
+        exits: { north: 'threshold', forward: 'threshold', ahead: 'threshold' },
         quick: ['go north', 'look', 'inventory']
       },
-      la_soglia: {
+      threshold: {
         sector: 'Threshold',
         title: 'The Threshold',
         text: 'A circular rotunda of black marble veined with silver. Four doors stand at the cardinal points. The amber door to the north carries the scent of earth. At the centre: a pentagonal pedestal waiting for things you do not yet possess.',
@@ -339,7 +339,7 @@
         sector: 'Garden',
         title: 'The Garden of Epicurus — Portico',
         text: 'Worn stone columns hold a roof that barely interrupts the light. Words run along the shafts: ataraxia — aponia — philia — phronesis. The path north enters cypress shade.',
-        exits: { north: 'garden_cypress', south: 'la_soglia', back: 'la_soglia' },
+        exits: { north: 'garden_cypress', south: 'threshold', back: 'threshold' },
         quick: ['examine columns', 'go north', 'go south', 'hint']
       },
       garden_cypress: {
@@ -507,7 +507,7 @@
     function handleExamine(subject) {
       const nodeId = state.currentNode;
       if (!subject) return currentNode().text;
-      if (nodeId === 'la_soglia' && subject.includes('pedestal')) {
+      if (nodeId === 'threshold' && subject.includes('pedestal')) {
         return 'Five recesses. Inscribed: Ataraxia. The Constant. Proportion. The Catalyst. A fifth shape you cannot yet name.';
       }
       if (nodeId === 'garden_portico' && (subject.includes('columns') || subject.includes('column'))) {
@@ -526,7 +526,7 @@
       switch (state.currentNode) {
         case 'intro_void':
           return 'A path forms ahead. Short commands are enough.';
-        case 'la_soglia':
+        case 'threshold':
           return 'The amber door to the north is the gentlest beginning.';
         case 'garden_portico':
           return 'The words on the columns are not decoration.';

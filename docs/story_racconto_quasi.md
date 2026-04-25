@@ -4,11 +4,11 @@ Si comincia nel silenzio.
 
 Non un silenzio vuoto: un silenzio pieno, che aspetta. Il protagonista si desta senza nome in `intro_void`, in un luogo che non è un luogo. Nessun soffitto, nessun pavimento, soltanto una luce senza fonte. In tasca, un taccuino vuoto. Davanti, una direzione.
 
-Quando avanza, la direzione diventa soglia.
+Quando avanza, la direzione diventa threshold.
 
-## La Soglia
+## Threshold
 
-`la_soglia` è una rotonda nera, venata d’argento. Quattro porte, quattro promesse: nord ambrato, est cobalto, sud dorato, ovest violaceo. Al centro, un piedistallo con cinque incavi. Quattro hanno un nome. Il quinto no.
+`threshold` è una rotonda nera, venata d’argento. Quattro porte, quattro promesse: nord ambrato, est cobalto, sud dorato, ovest violaceo. Al centro, un piedistallo con cinque incavi. Quattro hanno un nome. Il quinto no.
 
 Il gioco non dice “questo è l’obiettivo”, ma lo fa capire con la geometria: devi tornare qui con quattro prove in mano, e poi salire.
 
@@ -16,9 +16,9 @@ Il protagonista sceglie il Nord.
 
 ---
 
-## Il Giardino (Nord)
+## Garden (Nord)
 
-Il Giardino non minaccia. Chiede disciplina.
+Garden non minaccia. Chiede disciplina.
 
 Nel portico compaiono parole antiche. Nel viale di cipressi, foglie con termini che sembrano dispersi e invece aspettano un ordine. Non è un puzzle di bravura, è un puzzle di ascolto: `arrange leaves` nel giusto ritmo epicureo. Solo allora il passaggio si apre.
 
@@ -124,9 +124,9 @@ La Zona non si risolve con keyword perfette, ma con verità sufficientemente sin
 
 ---
 
-## Il Ritorno alla Soglia e il Gate di Profondità
+## Il Ritorno alla Threshold e il Gate di Profondità
 
-Con quattro simulacri, il protagonista torna a `la_soglia`.
+Con quattro simulacri, il protagonista torna a `threshold`.
 
 Ma adesso il gioco mette un filtro nuovo: non basta aver “spuntato” enigmi. L’Archivio misura anche quanta esperienza significativa hai davvero attraversato in ciascun settore.
 
@@ -163,7 +163,7 @@ Poi `drink`.
 
 Ma anche qui c’è un filtro nuovo: il **quote exposure gate**. Il gioco controlla quante vere risposte narrative/citazioni hai visto lungo la run. Se sono troppo poche, il Nucleo non risponde ancora. Non è punizione: è coerenza del tema. Prima di affrontare il centro, devi aver lasciato che abbastanza voci ti attraversassero.
 
-Quando la soglia è superata, il passaggio finale si apre.
+Quando la threshold è superata, il passaggio finale si apre.
 
 ---
 

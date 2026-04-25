@@ -72,7 +72,7 @@ final SectorContract memorySectorContract = SectorContract(
   exitGates: MemoryModule.exitGates,
   gateHints: MemoryModule.gateHints,
   handlesNode: (nodeId) =>
-      MemoryModule.isMemoryNode(nodeId) || nodeId == 'la_soglia',
+      MemoryModule.isMemoryNode(nodeId) || nodeId == 'threshold',
   buildStateView: _buildMemoryState,
   handleCommand: _handleMemoryCommand,
   onEnterNode: _onEnterMemoryNode,

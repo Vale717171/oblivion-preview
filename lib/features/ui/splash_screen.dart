@@ -3,7 +3,7 @@
 // Cinematic opening splash for The Archive of Oblivion.
 //
 // Sequence (normal mode):
-//   1. Black screen → bg_soglia fades in over 1 500 ms.
+//   1. Black screen → threshold_bg fades in over 1 500 ms.
 //   2. A barely-there Bach threshold motif starts softly under the image.
 //   3. After 1 600 ms the title container becomes visible; the typewriter
 //      begins writing "The Archive of Oblivion" at ~75 ms / char.
@@ -203,7 +203,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               duration: bgFadeDuration,
               curve: Curves.easeIn,
               child: Image.asset(
-                'assets/images/bg_soglia.jpg',
+                'assets/images/threshold_bg.jpg',
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,

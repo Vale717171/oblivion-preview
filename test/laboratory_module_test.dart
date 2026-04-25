@@ -173,7 +173,7 @@ void main() {
       expect(immediate.puzzles, isNot(contains('bain_marie_complete')));
 
       final afterExternal = LaboratoryModule.applyNavigationTransition(
-        fromNode: 'la_soglia',
+        fromNode: 'threshold',
         destNode: 'gallery_hall',
         puzzles: immediate.puzzles,
         counters: immediate.counters,
@@ -181,7 +181,7 @@ void main() {
       expect(afterExternal.counters['bain_marie_external'], 1);
 
       final matured = LaboratoryModule.applyNavigationTransition(
-        fromNode: 'la_soglia',
+        fromNode: 'threshold',
         destNode: 'garden_portico',
         puzzles: afterExternal.puzzles,
         counters: {

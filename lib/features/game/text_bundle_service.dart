@@ -41,13 +41,21 @@ class TextBundleService {
   /// Pre-load all bundles into the cache. Call once at app startup.
   Future<void> preloadAll() async {
     const bundles = [
-      'epicuro_bundle', 'proust_bundle', 'tarkovsky_bundle',
-      'newton_bundle',  'alchimia_bundle', 'arte_bundle',
+      'epicuro_bundle',
+      'proust_bundle',
+      'tarkovsky_bundle',
+      'newton_bundle',
+      'alchimia_bundle',
+      'arte_bundle',
     ];
-    const prompts = ['zona_templates', 'antagonist_templates', 'proust_triggers'];
+    const prompts = [
+      'zona_templates',
+      'antagonist_templates',
+      'proust_triggers'
+    ];
     await Future.wait([
       for (final b in bundles) loadBundle(b),
-      for (final p in prompts)  loadPrompt(p),
+      for (final p in prompts) loadPrompt(p),
     ]);
   }
 

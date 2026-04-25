@@ -8,7 +8,7 @@ All implementation, testing, and documentation should serve the browser preview.
 
 The public preview is:
 
-Splash -> Home -> La Soglia -> Il Giardino -> first Bach revelation -> preview ending.
+Splash -> Home -> Threshold -> Garden -> first Bach revelation -> preview ending.
 
 Keep new work inside this boundary unless the task explicitly expands the web preview.
 

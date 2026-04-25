@@ -100,9 +100,7 @@ class SaveSlot {
       tarkovskijAffinity: m['tarkovskij_affinity'] as int? ?? 0,
       sethAffinity: m['seth_affinity'] as int? ?? 0,
       sectorLabel: m['sector_label'] as String? ?? '',
-      savedAt: savedAtRaw.isNotEmpty
-          ? DateTime.tryParse(savedAtRaw)
-          : null,
+      savedAt: savedAtRaw.isNotEmpty ? DateTime.tryParse(savedAtRaw) : null,
     );
   }
 }
@@ -177,7 +175,9 @@ class SaveService {
   Future<List<SaveSlot>> listSlots() async {
     final db = await DatabaseService.instance.database;
     final rows = await db.query('save_slots', orderBy: 'slot ASC');
-    final bySlot = {for (final r in rows) r['slot'] as int: SaveSlot.fromMap(r)};
+    final bySlot = {
+      for (final r in rows) r['slot'] as int: SaveSlot.fromMap(r)
+    };
     return [
       for (int i = 0; i <= 3; i++) bySlot[i] ?? SaveSlot.empty(i),
     ];

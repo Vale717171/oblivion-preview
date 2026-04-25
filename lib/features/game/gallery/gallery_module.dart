@@ -82,8 +82,8 @@ class GalleryModule {
           'At the south end, where a door should be, there is only mirror. '
           'But once — from the corner of your eye — there was something else.',
       exits: {
-        'north': 'la_soglia',
-        'back': 'la_soglia',
+        'north': 'threshold',
+        'back': 'threshold',
         'south': 'gallery_corridor'
       },
       examines: {
@@ -193,7 +193,7 @@ class GalleryModule {
       description: 'A circular room. At its centre: the mirror.\n\n'
           'Not the room as it is, but the room as it would be under perfect honesty.\n\n'
           'A black-wood frame. No ornament. No mercy.',
-      exits: {'north': 'gallery_dark', 'back': 'la_soglia'},
+      exits: {'north': 'gallery_dark', 'back': 'threshold'},
       examines: {
         'mirror':
             'Flawless. It shows you and what you are still refusing to relinquish.',
@@ -262,7 +262,7 @@ class GalleryModule {
     required String target,
     required GalleryStateView state,
   }) {
-    if (nodeId == 'la_soglia' &&
+    if (nodeId == 'threshold' &&
         target.contains('pedestal') &&
         state.completedPuzzles.contains(surfacePuzzle) &&
         !state.completedPuzzles.contains('gallery_cross_sector_hint')) {

@@ -15,8 +15,8 @@ The question it must answer is:
 
 - Splash
 - Home
-- Soglia
-- Giardino
+- Threshold
+- Garden
 - first Bach revelation moment
 - preview ending screen/message that asks for comments and interest
 
@@ -42,8 +42,8 @@ The preview must feel:
 ## Non-Negotiable Quality Bar
 
 - Bach must feel earned.
-- The Giardino must have an emotional arc, not just puzzles.
-- Soglia must feel like suspension, not infrastructure.
+- The Garden must have an emotional arc, not just puzzles.
+- Threshold must feel like suspension, not infrastructure.
 - Text rhythm must distinguish minor responses from revelations.
 - The ending of the preview must clearly invite player feedback and expressions of interest.
 

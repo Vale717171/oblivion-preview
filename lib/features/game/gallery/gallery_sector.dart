@@ -66,7 +66,7 @@ final SectorContract gallerySectorContract = SectorContract(
   exitGates: GalleryModule.exitGates,
   gateHints: GalleryModule.gateHints,
   handlesNode: (nodeId) =>
-      GalleryModule.isGalleryNode(nodeId) || nodeId == 'la_soglia',
+      GalleryModule.isGalleryNode(nodeId) || nodeId == 'threshold',
   buildStateView: _buildGalleryState,
   handleCommand: _handleGalleryCommand,
   onEnterNode: _onEnterGalleryNode,

@@ -6,8 +6,8 @@ void main() {
   group('BackgroundService', () {
     test('maps sectors to the expected background assets', () {
       expect(
-        BackgroundService.getBackgroundForSector('giardino'),
-        'assets/images/bg_giardino.jpg',
+        BackgroundService.getBackgroundForSector('garden'),
+        'assets/images/garden_bg.jpg',
       );
       expect(
         BackgroundService.getBackgroundForSector('memoria'),
@@ -19,11 +19,11 @@ void main() {
     test('maps representative nodes to the correct background family', () {
       expect(
         BackgroundService.getBackgroundForNode('intro_void'),
-        'assets/images/bg_soglia.jpg',
+        'assets/images/threshold_bg.jpg',
       );
       expect(
         BackgroundService.getBackgroundForNode('garden_fountain'),
-        'assets/images/bg_giardino.jpg',
+        'assets/images/garden_bg.jpg',
       );
       expect(
         BackgroundService.getBackgroundForNode('obs_dome'),

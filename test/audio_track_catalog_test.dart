@@ -16,10 +16,10 @@ void main() {
     });
 
     test('falls back to sector base tracks when no node override exists', () {
-      expect(AudioTrackCatalog.trackForNode('garden_cypress'), 'giardino');
+      expect(AudioTrackCatalog.trackForNode('garden_cypress'), 'garden');
       expect(AudioTrackCatalog.trackForNode('obs_library'), 'osservatorio');
       expect(AudioTrackCatalog.trackForNode('lab_substances'), 'laboratorio');
-      expect(AudioTrackCatalog.trackForNode('unknown_node'), 'soglia');
+      expect(AudioTrackCatalog.trackForNode('unknown_node'), 'threshold');
     });
 
     test('recognises explicit track keys', () {
@@ -33,15 +33,15 @@ void main() {
       );
       expect(AudioTrackCatalog.assetForKey('silence'), isNull);
       expect(
-        AudioTrackCatalog.assetForKey('title_soglia'),
+        AudioTrackCatalog.assetForKey('title_threshold'),
         'assets/audio/bach_aria_goldberg.ogg',
       );
     });
 
     test('keeps ambient beds available for gameplay sectors', () {
-      expect(AudioTrackCatalog.ambientKeyForSector('soglia'), 'ambient_soglia');
-      expect(AudioTrackCatalog.ambientKeyForSector('giardino'),
-          'ambient_giardino');
+      expect(AudioTrackCatalog.ambientKeyForSector('threshold'),
+          'ambient_threshold');
+      expect(AudioTrackCatalog.ambientKeyForSector('garden'), 'ambient_garden');
       expect(AudioTrackCatalog.ambientKeyForSector('osservatorio'),
           'ambient_osservatorio');
       expect(AudioTrackCatalog.ambientKeyForSector('galleria'),
@@ -50,10 +50,10 @@ void main() {
     });
 
     test('exposes per-track mix bias only for calibrated outliers', () {
-      expect(AudioTrackCatalog.mixVolumeBiasForKey('soglia'), 0.10);
+      expect(AudioTrackCatalog.mixVolumeBiasForKey('threshold'), 0.10);
       expect(AudioTrackCatalog.mixVolumeBiasForKey('aria_goldberg'), 0.08);
       expect(AudioTrackCatalog.mixVolumeBiasForKey('galleria_dark'), -0.07);
-      expect(AudioTrackCatalog.mixVolumeBiasForKey('giardino_fountain'), 0.0);
+      expect(AudioTrackCatalog.mixVolumeBiasForKey('garden_fountain'), 0.0);
       expect(AudioTrackCatalog.mixVolumeBiasForKey('nonexistent_track'), 0.0);
     });
 
@@ -66,28 +66,28 @@ void main() {
     });
 
     test('maps representative nodes to expected sectors', () {
-      expect(AudioTrackCatalog.sectorForNode('intro_void'), 'soglia');
-      expect(AudioTrackCatalog.sectorForNode('preview_epilogue'), 'soglia');
+      expect(AudioTrackCatalog.sectorForNode('intro_void'), 'threshold');
+      expect(AudioTrackCatalog.sectorForNode('preview_epilogue'), 'threshold');
       expect(AudioTrackCatalog.sectorForNode('gallery_light'), 'galleria');
       expect(
           AudioTrackCatalog.sectorForNode('quinto_ritual_chamber'), 'memoria');
       expect(AudioTrackCatalog.sectorForNode('finale_oblivion'), 'memoria');
-      expect(AudioTrackCatalog.sectorForNode('unknown_node'), 'soglia');
+      expect(AudioTrackCatalog.sectorForNode('unknown_node'), 'threshold');
     });
 
     test(
         'keeps audio and background sector families aligned for representative nodes',
         () {
-      expect(AudioTrackCatalog.sectorForNode('garden_fountain'), 'giardino');
+      expect(AudioTrackCatalog.sectorForNode('garden_fountain'), 'garden');
       expect(
         BackgroundService.getBackgroundForNode('garden_fountain'),
-        'assets/images/bg_giardino.jpg',
+        'assets/images/garden_bg.jpg',
       );
 
-      expect(AudioTrackCatalog.sectorForNode('preview_epilogue'), 'soglia');
+      expect(AudioTrackCatalog.sectorForNode('preview_epilogue'), 'threshold');
       expect(
         BackgroundService.getBackgroundForNode('preview_epilogue'),
-        'assets/images/bg_soglia.jpg',
+        'assets/images/threshold_bg.jpg',
       );
 
       expect(AudioTrackCatalog.sectorForNode('quinto_landing'), 'memoria');

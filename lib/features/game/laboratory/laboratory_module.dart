@@ -187,8 +187,8 @@ class LaboratoryModule {
           'To the south: the Hall of Substances.',
       exits: {
         'south': 'lab_substances',
-        'east': 'la_soglia',
-        'back': 'la_soglia'
+        'east': 'threshold',
+        'back': 'threshold'
       },
       examines: {
         'statues':
@@ -505,7 +505,7 @@ class LaboratoryModule {
     required String target,
     required LaboratoryStateView state,
   }) {
-    if (nodeId == 'la_soglia' &&
+    if (nodeId == 'threshold' &&
         target.contains('pedestal') &&
         state.runtime.simulacrumAcquired &&
         !state.runtime.crossSectorHintUnlocked) {

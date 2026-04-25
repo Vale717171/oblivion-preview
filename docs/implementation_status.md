@@ -6,7 +6,7 @@ The project targets a Flutter Web preview for Itch.io.
 
 The active slice is:
 
-Splash -> Home -> La Soglia -> Il Giardino -> first Bach revelation -> preview ending.
+Splash -> Home -> Threshold -> Garden -> first Bach revelation -> preview ending.
 
 ## Implemented
 

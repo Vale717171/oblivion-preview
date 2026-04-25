@@ -6,7 +6,7 @@ The project is web-only. Keep build, test, and release work focused on the brows
 
 ## Current Preview
 
-Splash -> Home -> La Soglia -> Il Giardino -> first Bach revelation -> preview ending.
+Splash -> Home -> Threshold -> Garden -> first Bach revelation -> preview ending.
 
 Keep all work inside this public slice unless explicitly asked to expand it.
 

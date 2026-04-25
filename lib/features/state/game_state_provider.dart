@@ -23,15 +23,15 @@ class GameState {
   /// Deserializza una riga del DB (`game_state`) in un [GameState].
   factory GameState.fromRow(Map<String, Object?> row) {
     return GameState(
-      currentNode:      row['current_node'] as String,
+      currentNode: row['current_node'] as String,
       completedPuzzles: Set<String>.from(
           jsonDecode(row['completed_puzzles'] as String? ?? '[]') as List),
-      puzzleCounters:   Map<String, int>.from(
+      puzzleCounters: Map<String, int>.from(
           (jsonDecode(row['puzzle_counters'] as String? ?? '{}') as Map)
               .map((k, v) => MapEntry(k as String, (v as num).toInt()))),
-      inventory:        List<String>.from(
+      inventory: List<String>.from(
           jsonDecode(row['inventory'] as String? ?? '["notebook"]') as List),
-      psychoWeight:     row['psycho_weight'] as int? ?? 0,
+      psychoWeight: row['psycho_weight'] as int? ?? 0,
     );
   }
 }
@@ -67,22 +67,22 @@ class GameStateNotifier extends AsyncNotifier<GameState> {
     await db.insert(
       'game_state',
       {
-        'id':               1,
-        'current_node':     currentNode,
+        'id': 1,
+        'current_node': currentNode,
         'completed_puzzles': jsonEncode(completedPuzzles.toList()),
-        'puzzle_counters':  jsonEncode(puzzleCounters),
-        'inventory':        jsonEncode(inventory),
-        'psycho_weight':    psychoWeight,
-        'last_played':      DateTime.now().toIso8601String(),
+        'puzzle_counters': jsonEncode(puzzleCounters),
+        'inventory': jsonEncode(inventory),
+        'psycho_weight': psychoWeight,
+        'last_played': DateTime.now().toIso8601String(),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     state = AsyncValue.data(GameState(
-      currentNode:      currentNode,
+      currentNode: currentNode,
       completedPuzzles: completedPuzzles,
-      puzzleCounters:   puzzleCounters,
-      inventory:        inventory,
-      psychoWeight:     psychoWeight,
+      puzzleCounters: puzzleCounters,
+      inventory: inventory,
+      psychoWeight: psychoWeight,
     ));
   }
 
@@ -92,11 +92,11 @@ class GameStateNotifier extends AsyncNotifier<GameState> {
   Future<void> updateNode(String newNode) async {
     final current = state.valueOrNull;
     await saveEngineState(
-      currentNode:      newNode,
+      currentNode: newNode,
       completedPuzzles: current?.completedPuzzles ?? const {},
-      puzzleCounters:   current?.puzzleCounters   ?? const {},
-      inventory:        current?.inventory         ?? const ['notebook'],
-      psychoWeight:     current?.psychoWeight      ?? 0,
+      puzzleCounters: current?.puzzleCounters ?? const {},
+      inventory: current?.inventory ?? const ['notebook'],
+      psychoWeight: current?.psychoWeight ?? 0,
     );
   }
 
@@ -111,6 +111,5 @@ class GameStateNotifier extends AsyncNotifier<GameState> {
   }
 }
 
-final gameStateProvider =
-    AsyncNotifierProvider<GameStateNotifier, GameState>(
-        () => GameStateNotifier());
+final gameStateProvider = AsyncNotifierProvider<GameStateNotifier, GameState>(
+    () => GameStateNotifier());

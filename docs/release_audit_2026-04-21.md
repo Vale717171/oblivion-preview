@@ -36,8 +36,8 @@ The problem is "the game does not yet feel magnetic enough".
 - Reward-first Bach logic in `lib/features/audio/audio_service.dart`
 - Ambient routing by sector in `lib/features/audio/audio_track_catalog.dart`
 - Repository-generated ambient files:
-  - `assets/audio/ambient_soglia_air.ogg`
-  - `assets/audio/ambient_giardino_water.ogg`
+  - `assets/audio/ambient_threshold_air.ogg`
+  - `assets/audio/ambient_garden_water.ogg`
   - `assets/audio/ambient_osservatorio_metal.ogg`
 
 ### Progression/Feedback

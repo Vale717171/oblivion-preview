@@ -12,8 +12,8 @@ The playable path is:
 
 1. Splash
 2. Home/title
-3. La Soglia
-4. Il Giardino
+3. Threshold
+4. Garden
 5. First Bach revelation
 6. Preview ending
 

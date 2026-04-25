@@ -23,9 +23,9 @@ void main() {
   group('Garden arrival', () {
     test('first entry from the threshold lands with slower weight', () {
       final arrival = GardenModule.onEnterNode(
-        fromNode: 'la_soglia',
+        fromNode: 'threshold',
         destNode: 'garden_portico',
-        state: _state(nodeId: 'la_soglia'),
+        state: _state(nodeId: 'threshold'),
       );
 
       expect(arrival, isNotNull);

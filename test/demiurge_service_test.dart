@@ -23,8 +23,8 @@ void main() {
 
   group('DemiurgeService.sectorForNode', () {
     test('maps known sector prefixes', () {
-      expect(DemiurgeService.sectorForNode('garden_cypress'), 'giardino');
-      expect(DemiurgeService.sectorForNode('la_soglia'), 'giardino');
+      expect(DemiurgeService.sectorForNode('garden_cypress'), 'garden');
+      expect(DemiurgeService.sectorForNode('threshold'), 'garden');
       expect(DemiurgeService.sectorForNode('obs_dome'), 'osservatorio');
       expect(DemiurgeService.sectorForNode('gal_copies'), 'galleria');
       expect(DemiurgeService.sectorForNode('lab_furnace'), 'laboratorio');

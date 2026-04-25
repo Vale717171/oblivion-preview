@@ -6,8 +6,8 @@ This note tracks candidate masters for the Itch.io web preview.
 
 - Title Bach cue with clean entry.
 - Gradual Bach fade on first meaningful interaction.
-- Ambient bed for La Soglia.
-- Ambient bed for Il Giardino.
+- Ambient bed for Threshold.
+- Ambient bed for Garden.
 - Sparse evocative noises that can appear between commands.
 - Revelation cue for the first Bach moment.
 

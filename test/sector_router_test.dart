@@ -145,7 +145,7 @@ void main() {
     test('routes revisit enter hook', () {
       final response = router.onEnterNode(
         const SectorEnterContext(
-          fromNode: 'la_soglia',
+          fromNode: 'threshold',
           destNode: 'garden_portico',
           snapshot: SectorRuntimeSnapshot(
             completedPuzzles: {'garden_complete', 'garden_arrival'},

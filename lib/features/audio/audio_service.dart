@@ -156,7 +156,7 @@ class AudioService with WidgetsBindingObserver {
   }
 
   Future<void> prepareTitleSceneCue() async {
-    const key = 'title_soglia';
+    const key = 'title_threshold';
     final asset = AudioTrackCatalog.assetForKey(key);
     if (asset == null || !await _assetExists(asset)) return;
 
@@ -185,7 +185,7 @@ class AudioService with WidgetsBindingObserver {
   void unlockAndPlayTitleCue() {
     if (!_titleCuePrepared) {
       // ignore: discarded_futures
-      handleTrigger('title_soglia');
+      handleTrigger('title_threshold');
       return;
     }
 
@@ -363,7 +363,7 @@ class AudioService with WidgetsBindingObserver {
         await _playPreviewClosureTrack();
         return;
       }
-      if (trigger == 'title_soglia') {
+      if (trigger == 'title_threshold') {
         await _playTitleCueInternal();
         return;
       }
@@ -498,7 +498,7 @@ class AudioService with WidgetsBindingObserver {
     _isFirstTrack = false;
 
     // Detect cross-sector transition to use a longer cinematic fade-in.
-    // Same-sector room overrides (e.g. giardino → giardino_fountain) stay fast.
+    // Same-sector room overrides (e.g. garden → garden_fountain) stay fast.
     final oldFamily = _currentAmbienceKey != null
         ? AudioTrackCatalog.sectorFamilyForTrackKey(_currentAmbienceKey!)
         : null;
@@ -804,7 +804,7 @@ class AudioService with WidgetsBindingObserver {
   }
 
   Future<void> _playTitleCueInternal() async {
-    const key = 'title_soglia';
+    const key = 'title_threshold';
     final asset = AudioTrackCatalog.assetForKey(key);
     if (asset == null || !await _assetExists(asset)) return;
 
@@ -858,7 +858,7 @@ class AudioService with WidgetsBindingObserver {
   }
 
   Future<void> _startTitleAmbientBed() async {
-    const ambientKey = 'ambient_soglia';
+    const ambientKey = 'ambient_threshold';
     if (_gameplayAudioUnlocked || !_isMusicEnabled) return;
     final asset = AudioTrackCatalog.assetForKey(ambientKey);
     if (asset == null || !await _assetExists(asset)) return;
@@ -987,8 +987,8 @@ class AudioService with WidgetsBindingObserver {
       // ignore: discarded_futures
       _ambientPlayer.play();
       final sectorBias = switch (sector) {
-        'soglia' => 0.72,
-        'giardino' => 0.72, // lighter water bed; no constant hiss under Bach
+        'threshold' => 0.72,
+        'garden' => 0.72, // lighter water bed; no constant hiss under Bach
         'osservatorio' => 0.88, // lighter, airy metallic resonance
         _ => 1.0,
       };

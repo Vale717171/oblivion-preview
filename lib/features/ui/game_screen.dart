@@ -364,7 +364,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     if (isFinale) return 0.52;
     switch (nodeId) {
       case 'intro_void':
-      case 'la_soglia':
+      case 'threshold':
         return 0.34;
       case 'garden_fountain':
         return 0.38;

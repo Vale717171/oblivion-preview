@@ -237,8 +237,8 @@ class MemoryModule {
         'north': 'quinto_maturity',
         'south': 'quinto_old_age',
         'down': 'quinto_ritual_chamber',
-        'up': 'la_soglia',
-        'back': 'la_soglia',
+        'up': 'threshold',
+        'back': 'threshold',
       },
       examines: {
         'doors':
@@ -622,7 +622,7 @@ class MemoryModule {
     required String target,
     required MemoryStateView state,
   }) {
-    if (nodeId == 'la_soglia' &&
+    if (nodeId == 'threshold' &&
         target.contains('pedestal') &&
         state.runtime.ritualComplete &&
         !state.runtime.crossSectorHintUnlocked) {

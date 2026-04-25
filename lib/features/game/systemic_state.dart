@@ -320,7 +320,7 @@ class SystemicStateCodec {
     required Map<String, int> counters,
     required Set<String> puzzles,
   }) {
-    if (nodeId != 'la_soglia') return null;
+    if (nodeId != 'threshold') return null;
     final state = fromSnapshot(
       psychoWeight: 0,
       counters: counters,

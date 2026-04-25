@@ -57,8 +57,8 @@ class ObservatoryModule {
           'To the north: the Corridor of Hypotheses.',
       exits: {
         'north': 'obs_corridor',
-        'west': 'la_soglia',
-        'back': 'la_soglia'
+        'west': 'threshold',
+        'back': 'threshold'
       },
       examines: {
         'lenses': 'Three lenses: Sun (large, amber), Mercury (small, dense), '
@@ -325,7 +325,7 @@ class ObservatoryModule {
       );
     }
 
-    if (nodeId == 'la_soglia' &&
+    if (nodeId == 'threshold' &&
         target.contains('pedestal') &&
         state.completedPuzzles.contains(surfacePuzzle) &&
         !state.completedPuzzles.contains('obs_cross_sector_hint')) {

@@ -29,7 +29,8 @@ class EchoService {
           'The smell and taste of things remain poised a long time, like souls, '
           'ready to remind us, waiting and hoping for their moment, amid the ruins '
           'of all the rest.',
-      coda: 'The Archive holds what your senses remember before your mind does.',
+      coda:
+          'The Archive holds what your senses remember before your mind does.',
     ),
     _EchoEntry(
       preamble: 'Involuntary memory does not announce itself.',
@@ -40,8 +41,7 @@ class EchoService {
     ),
     _EchoEntry(
       preamble: 'The Echo of Proust stirs in the Archive.',
-      citation:
-          'We do not receive wisdom, we must discover it for ourselves, '
+      citation: 'We do not receive wisdom, we must discover it for ourselves, '
           'after a journey through the wilderness which no one else can make for us.',
       coda: 'Every wrong command is part of that journey.',
     ),
@@ -83,15 +83,14 @@ class EchoService {
   static const _tarkovskijResponses = [
     _EchoEntry(
       preamble: 'Tarkovskij\'s Echo slows the Archive around you.',
-      citation:
-          'Time is not a river flowing in one direction. '
+      citation: 'Time is not a river flowing in one direction. '
           'The artist sculpts it, seizing the fragment that holds the pressure of lived life.',
-      coda: 'Every image you observe here has already been sculpted by your longing.',
+      coda:
+          'Every image you observe here has already been sculpted by your longing.',
     ),
     _EchoEntry(
       preamble: 'Patience is the only tool that works here.',
-      citation:
-          'The screen image must carry within it the mark of time — '
+      citation: 'The screen image must carry within it the mark of time — '
           'not the passage of time, but time itself, its texture, its resistance.',
       coda: 'Do not hurry. The Archive will not open any faster.',
     ),
@@ -104,8 +103,7 @@ class EchoService {
     ),
     _EchoEntry(
       preamble: 'The Archive holds its breath when you truly look.',
-      citation:
-          'The past is not behind us. It is more real than the present, '
+      citation: 'The past is not behind us. It is more real than the present, '
           'because it can no longer be altered. The present is always escaping.',
       coda: 'Look at what is here. It has already become permanent.',
     ),
@@ -114,12 +112,13 @@ class EchoService {
       citation:
           'A work of art, like a human life, carries within it the experience '
           'of mortality — and the desperate, burning wish to transcend it.',
-      coda: 'The Archive was built by someone who wanted to be remembered. So were you.',
+      coda:
+          'The Archive was built by someone who wanted to be remembered. So were you.',
     ),
     _EchoEntry(
-      preamble: 'Slowness is not failure. It is the correct speed for this place.',
-      citation:
-          'True observation means surrendering to what is there — '
+      preamble:
+          'Slowness is not failure. It is the correct speed for this place.',
+      citation: 'True observation means surrendering to what is there — '
           'not what you expected, not what you hoped for, but what is.',
       coda: 'Look again. You missed something the first time.',
     ),
@@ -131,27 +130,27 @@ class EchoService {
   static const _sethResponses = [
     _EchoEntry(
       preamble: 'Seth speaks from the dimension you are constructing.',
-      citation:
-          'You are not a passive witness to this Archive. '
+      citation: 'You are not a passive witness to this Archive. '
           'Every belief you carry sculpts the rooms you find and the doors that open.',
       coda: 'What you believe is possible here — is possible here.',
     ),
     _EchoEntry(
       preamble: 'The point of power is always in this moment.',
-      citation:
-          'The present moment is the only place where change occurs. '
+      citation: 'The present moment is the only place where change occurs. '
           'Not yesterday, which is fixed, not tomorrow, which is imagined — now.',
-      coda: 'Type the command you believe will work. That belief is not nothing.',
+      coda:
+          'Type the command you believe will work. That belief is not nothing.',
     ),
     _EchoEntry(
-      preamble: 'Seth\'s Echo surfaces at the intersection of thought and matter.',
-      citation:
-          'Your consciousness is not imprisoned in your body. '
+      preamble:
+          'Seth\'s Echo surfaces at the intersection of thought and matter.',
+      citation: 'Your consciousness is not imprisoned in your body. '
           'It projects outward and creates the physical world it then appears to inhabit.',
       coda: 'This Archive is not external to you. It is your projection.',
     ),
     _EchoEntry(
-      preamble: 'The Archive listens to what you create, not only what you command.',
+      preamble:
+          'The Archive listens to what you create, not only what you command.',
       citation:
           'Every thought is an action. Every word typed here changes the structure '
           'of what is possible in the next moment.',
@@ -159,15 +158,14 @@ class EchoService {
     ),
     _EchoEntry(
       preamble: 'Creation does not require perfection. It requires intent.',
-      citation:
-          'The so-called wrong commands are not failures. '
+      citation: 'The so-called wrong commands are not failures. '
           'They are the edges of your current belief about what is allowed.',
       coda: 'Expand the belief. The command will follow.',
     ),
     _EchoEntry(
-      preamble: 'Seth addresses the one who mistakes the map for the territory.',
-      citation:
-          'The Archive exists because you needed it to exist. '
+      preamble:
+          'Seth addresses the one who mistakes the map for the territory.',
+      citation: 'The Archive exists because you needed it to exist. '
           'The question is not how to escape it — the question is what it is teaching you.',
       coda: 'You created this. Only you can choose what it means.',
     ),
@@ -198,25 +196,68 @@ class EchoService {
   // ── Sector → primary Echo persona ───────────────────────────────────────────
   // Maps Demiurge sector keys to the Echo that feels most at home there.
   static const Map<String, String> sectorEcho = {
-    'laboratorio':  'proust',      // Lab — sensory memory, the madeleine
-    'galleria':     'tarkovskij',  // Gallery — sculpted time, image, reflection
-    'osservatorio': 'tarkovskij',  // Observatory — cosmic slowness, distant light
-    'giardino':     'seth',        // Garden — belief, nature as creation
-    'universale':   'seth',        // Universal fallback — reality creation
+    'laboratorio': 'proust', // Lab — sensory memory, the madeleine
+    'galleria': 'tarkovskij', // Gallery — sculpted time, image, reflection
+    'osservatorio':
+        'tarkovskij', // Observatory — cosmic slowness, distant light
+    'garden': 'seth', // Garden — belief, nature as creation
+    'universale': 'seth', // Universal fallback — reality creation
   };
 
   // ── Thematic keywords per sector ─────────────────────────────────────────────
   // Used to detect when a player's free text is semantically "in sector"
   // even if it doesn't match a known command verb.
   static const Map<String, List<String>> _thematicKeywords = {
-    'laboratorio':  ['smell', 'taste', 'remember', 'madeleine', 'odor', 'scent',
-                     'memory', 'fragrance', 'flavour', 'flavor', 'aroma'],
-    'galleria':     ['time', 'slow', 'watch', 'sculpt', 'image', 'reflection',
-                     'mirror', 'light', 'shadow', 'frame', 'canvas'],
-    'osservatorio': ['time', 'star', 'light', 'slow', 'watch', 'cosmos',
-                     'infinity', 'telescope', 'sky', 'orbit'],
-    'giardino':     ['create', 'believe', 'reality', 'change', 'think', 'grow',
-                     'nature', 'seed', 'roots', 'bloom'],
+    'laboratorio': [
+      'smell',
+      'taste',
+      'remember',
+      'madeleine',
+      'odor',
+      'scent',
+      'memory',
+      'fragrance',
+      'flavour',
+      'flavor',
+      'aroma'
+    ],
+    'galleria': [
+      'time',
+      'slow',
+      'watch',
+      'sculpt',
+      'image',
+      'reflection',
+      'mirror',
+      'light',
+      'shadow',
+      'frame',
+      'canvas'
+    ],
+    'osservatorio': [
+      'time',
+      'star',
+      'light',
+      'slow',
+      'watch',
+      'cosmos',
+      'infinity',
+      'telescope',
+      'sky',
+      'orbit'
+    ],
+    'garden': [
+      'create',
+      'believe',
+      'reality',
+      'change',
+      'think',
+      'grow',
+      'nature',
+      'seed',
+      'roots',
+      'bloom'
+    ],
   };
 
   /// Returns true if [input] contains at least one thematic keyword for [sector].
@@ -240,10 +281,10 @@ class EchoService {
   /// there are no entries for that persona.
   String? respond(String echo) {
     final List<_EchoEntry> pool = switch (echo) {
-      'proust'      => _proustResponses,
-      'tarkovskij'  => _tarkovskijResponses,
-      'seth'        => _sethResponses,
-      _             => const [],
+      'proust' => _proustResponses,
+      'tarkovskij' => _tarkovskijResponses,
+      'seth' => _sethResponses,
+      _ => const [],
     };
     if (pool.isEmpty) return null;
     final entry = pool[_rng.nextInt(pool.length)];
@@ -254,7 +295,9 @@ class EchoService {
   /// or null if no Echo is appropriate.
   /// [verb] is the [CommandVerb.name] string from the parser, e.g. 'smell',
   /// 'examine', 'wait', 'write', 'observe'.
-  static String? echoForCommand(String verb, int phase, {
+  static String? echoForCommand(
+    String verb,
+    int phase, {
     required int proustAffinity,
     required int tarkovskijAffinity,
     required int sethAffinity,

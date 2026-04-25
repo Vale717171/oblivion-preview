@@ -1,8 +1,8 @@
 {
   "steps": [
-    { "command": "go north", "note": "intro_void → la_soglia (The Threshold)" },
+    { "command": "go north", "note": "intro_void → threshold (The Threshold)" },
 
-    { "command": "go west", "note": "la_soglia → lab_vestibule (Lab: three offerings to open Hall of Substances)" },
+    { "command": "go west", "note": "threshold → lab_vestibule (Lab: three offerings to open Hall of Substances)" },
     { "command": "offer courage", "note": "First offering to the statues (1/3)" },
     { "command": "offer patience", "note": "Second offering (2/3)" },
     { "command": "offer acceptance", "note": "Third offering → lab_offers_complete; Hall of Substances opens" },
@@ -14,9 +14,9 @@
     { "command": "go east", "note": "lab_substances → lab_bain_marie (enter so leaving sets the bain_marie_left flag)" },
     { "command": "go west", "note": "lab_bain_marie → lab_substances; bain_marie_left is now set — outer water will transform after 3 external visits" },
     { "command": "go north", "note": "lab_substances → lab_vestibule" },
-    { "command": "go east", "note": "lab_vestibule → la_soglia (non-lab visit 1 toward bain_marie_complete)" },
+    { "command": "go east", "note": "lab_vestibule → threshold (non-lab visit 1 toward bain_marie_complete)" },
 
-    { "command": "go north", "note": "la_soglia → garden_portico (non-lab visit 2)" },
+    { "command": "go north", "note": "threshold → garden_portico (non-lab visit 2)" },
     { "command": "go north", "note": "garden_portico → garden_cypress (non-lab visit 3 → bain_marie_complete!)" },
     { "command": "arrange leaves", "note": "Gather the Epicurean leaves into their remembered order → leaves_arranged; path north unlocks" },
     { "command": "go north", "note": "garden_cypress → garden_fountain (gate: leaves_arranged ✓)" },
@@ -37,9 +37,9 @@
     { "command": "go south", "note": "garden_stelae → garden_fountain" },
     { "command": "go south", "note": "garden_fountain → garden_cypress" },
     { "command": "go south", "note": "garden_cypress → garden_portico" },
-    { "command": "go south", "note": "garden_portico → la_soglia" },
+    { "command": "go south", "note": "garden_portico → threshold" },
 
-    { "command": "go east", "note": "la_soglia → obs_antechamber (Observatory)" },
+    { "command": "go east", "note": "threshold → obs_antechamber (Observatory)" },
     { "command": "combine moon mercury sun", "note": "Mount the lenses in inverted order → lenses_combined; corridor north opens" },
     { "command": "go north", "note": "obs_antechamber → obs_corridor (gate: lenses_combined ✓)" },
     { "command": "walk blindfolded", "note": "Heisenberg puzzle: see without looking → heisenberg_walked; both branches open" },
@@ -67,9 +67,9 @@
     { "command": "go west", "note": "obs_calibration → obs_void" },
     { "command": "go east", "note": "obs_void → obs_corridor" },
     { "command": "go south", "note": "obs_corridor → obs_antechamber" },
-    { "command": "go west", "note": "obs_antechamber → la_soglia" },
+    { "command": "go west", "note": "obs_antechamber → threshold" },
 
-    { "command": "go south", "note": "la_soglia → gallery_hall (Gallery)" },
+    { "command": "go south", "note": "threshold → gallery_hall (Gallery)" },
     { "command": "walk backward", "note": "Face north while moving south — mirror door appears → hall_backward_walked; corridor south opens" },
     { "command": "go south", "note": "gallery_hall → gallery_corridor (gate: hall_backward_walked ✓)" },
     { "command": "press anomalous tile", "note": "Press the tile that differs from its neighbours → corridor_tile_pressed; south end opens" },
@@ -80,9 +80,9 @@
     { "command": "go south", "note": "gallery_originals → gallery_light" },
     { "command": "go south", "note": "gallery_light → gallery_central (psycho_weight must be 0 for the clean break)" },
     { "command": "break mirror", "note": "Shatter the mirror with empty hands → the proportion granted, gallery_complete" },
-    { "command": "go back", "note": "gallery_central → la_soglia (direct back exit)" },
+    { "command": "go back", "note": "gallery_central → threshold (direct back exit)" },
 
-    { "command": "go west", "note": "la_soglia → lab_vestibule (Lab completion)" },
+    { "command": "go west", "note": "threshold → lab_vestibule (Lab completion)" },
     { "command": "go south", "note": "lab_vestibule → lab_substances (lab_offers_complete already set ✓)" },
     { "command": "go west", "note": "lab_substances → lab_furnace (all three substances collected ✓)" },
     { "command": "calcinate", "note": "Light the furnace and begin calcination → furnace_calcinating" },
@@ -110,9 +110,9 @@
     { "command": "go north", "note": "lab_great_work → lab_furnace" },
     { "command": "go east", "note": "lab_furnace → lab_substances" },
     { "command": "go north", "note": "lab_substances → lab_vestibule" },
-    { "command": "go east", "note": "lab_vestibule → la_soglia (all four simulacra now in inventory)" },
+    { "command": "go east", "note": "lab_vestibule → threshold (all four simulacra now in inventory)" },
 
-    { "command": "go up", "note": "la_soglia → quinto_landing (gate: all four simulacra in inventory ✓)" },
+    { "command": "go up", "note": "threshold → quinto_landing (gate: all four simulacra in inventory ✓)" },
     { "command": "go east", "note": "quinto_landing → quinto_childhood" },
     { "command": "write hope", "note": "The first word you truly learned → memory_childhood paid" },
     { "command": "go back", "note": "quinto_childhood → quinto_landing (gate: memory_childhood ✓)" },

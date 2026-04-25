@@ -66,7 +66,7 @@ final SectorContract gardenSectorContract = SectorContract(
   exitGates: GardenModule.exitGates,
   gateHints: GardenModule.gateHints,
   handlesNode: (nodeId) =>
-      GardenModule.isGardenNode(nodeId) || nodeId == 'la_soglia',
+      GardenModule.isGardenNode(nodeId) || nodeId == 'threshold',
   buildStateView: _buildGardenState,
   handleCommand: _handleGardenCommand,
   onEnterNode: _onEnterGardenNode,

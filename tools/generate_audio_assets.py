@@ -33,8 +33,8 @@ import tempfile
 # Format: output_filename -> (corpus_key, tempo_scale, trim_secs_or_None)
 #
 # Thematic rationale per sector:
-#   soglia      → BWV 846 Prelude in C major — bright, contemplative opening
-#   giardino    → BWV 155.5 chorale — gentle, pastoral E minor
+#   threshold      → BWV 846 Prelude in C major — bright, contemplative opening
+#   garden    → BWV 155.5 chorale — gentle, pastoral E minor
 #   osservatorio→ BWV 227.1 motet (opening) — polyphonic, mathematical
 #   galleria    → BWV 244.46 chorale — poignant, B minor (art / beauty / loss)
 #   laboratorio → BWV 244.3 chorale — systematic, purposeful
@@ -46,8 +46,8 @@ import tempfile
 # ---------------------------------------------------------------------------
 TRACK_SPECS = {
     # ── Sector base tracks ──────────────────────────────────────────────────
-    "bach_bwv846_soglia.ogg":             ("bach/bwv846",      1.00, None),
-    "bach_goldberg_giardino.ogg":         ("bach/bwv155.5",    0.90, None),
+    "bach_bwv846_threshold.ogg":             ("bach/bwv846",      1.00, None),
+    "bach_goldberg_garden.ogg":         ("bach/bwv155.5",    0.90, None),
     "bach_contrapunctus_observatory.ogg": ("bach/bwv227.1",    1.05, None),
     "bach_bwv846_galleria.ogg":           ("bach/bwv244.46",   1.00, None),
     "bach_bwv1008_laboratorio.ogg":       ("bach/bwv244.3",    0.85, None),

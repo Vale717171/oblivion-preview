@@ -30,7 +30,8 @@ void main() {
       expect(ParserService.parse('observe').verb, CommandVerb.observe);
       expect(ParserService.parse('enter 1').verb, CommandVerb.enterValue);
       expect(ParserService.parse('collect mercury').verb, CommandVerb.collect);
-      expect(ParserService.parse('decipher symbols').verb, CommandVerb.decipher);
+      expect(
+          ParserService.parse('decipher symbols').verb, CommandVerb.decipher);
       expect(ParserService.parse('say i remember').verb, CommandVerb.say);
     });
 
@@ -50,12 +51,15 @@ void main() {
     test('supports verb aliases for puzzle interactions', () {
       expect(ParserService.parse('push the button').verb, CommandVerb.press);
       expect(ParserService.parse('give memory').verb, CommandVerb.offer);
-      expect(ParserService.parse('reverse the mirror').verb, CommandVerb.invert);
-      expect(ParserService.parse('adjust the alembic to high').verb, CommandVerb.setParam);
+      expect(
+          ParserService.parse('reverse the mirror').verb, CommandVerb.invert);
+      expect(ParserService.parse('adjust the alembic to high').verb,
+          CommandVerb.setParam);
       expect(ParserService.parse('speak the truth').verb, CommandVerb.say);
     });
 
-    test('returns unknown for unsupported verbs while preserving raw input', () {
+    test('returns unknown for unsupported verbs while preserving raw input',
+        () {
       final parsed = ParserService.parse('sing softly now');
       expect(parsed.verb, CommandVerb.unknown);
       expect(parsed.args, ['softly', 'now']);

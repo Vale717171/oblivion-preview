@@ -384,7 +384,7 @@ class ZoneModule {
       return const ZoneTurnResolution(
         response: EngineResponse(
           narrativeText: 'The Zone has heard you. The Archive is back.',
-          newNode: 'la_soglia',
+          newNode: 'threshold',
         ),
       );
     }
@@ -486,7 +486,7 @@ class ZoneModule {
         narrativeText: 'The Zone receives your answer without comment.\n\n'
             '${_crypticResponseFor(promptSource, evaluation)}',
         needsDemiurge: evaluation.qualityTier >= 2,
-        newNode: 'la_soglia',
+        newNode: 'threshold',
         completePuzzle: respondedKey,
         lucidityDelta: evaluation.qualityTier >= 2 ? -3 : -1,
         anxietyDelta: evaluation.qualityTier >= 2 ? -5 : -2,
@@ -599,7 +599,7 @@ class ZoneModule {
       probability = 0.40;
     } else if (_isSectorCompletion(fromNode, puzzles)) {
       probability = 0.25;
-    } else if (fromNode == 'la_soglia' || destNode == 'la_soglia') {
+    } else if (fromNode == 'threshold' || destNode == 'threshold') {
       probability = 0.15;
     } else {
       return 0;
@@ -641,7 +641,7 @@ class ZoneModule {
     required Map<String, int> counters,
   }) {
     final updates = <String, int>{};
-    final isTransit = fromNode == 'la_soglia' || destNode == 'la_soglia';
+    final isTransit = fromNode == 'threshold' || destNode == 'threshold';
     if (isTransit && destNode != zoneNodeId) {
       updates['consecutive_transits'] =
           (counters['consecutive_transits'] ?? 0) + 1;

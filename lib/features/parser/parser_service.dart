@@ -6,13 +6,39 @@
 import 'parser_state.dart';
 
 class ParserService {
-  static const _directions = {'n', 'north', 's', 'south', 'e', 'east', 'w', 'west'};
+  static const _directions = {
+    'n',
+    'north',
+    's',
+    'south',
+    'e',
+    'east',
+    'w',
+    'west'
+  };
   static const _stopWords = {
-    'the', 'a', 'an',
-    'at', 'to', 'into', 'on', 'up',
-    'with', 'from', 'by', 'for', 'in', 'of',
-    'toward', 'towards', 'through', 'over', 'under',
-    'against', 'between', 'among',
+    'the',
+    'a',
+    'an',
+    'at',
+    'to',
+    'into',
+    'on',
+    'up',
+    'with',
+    'from',
+    'by',
+    'for',
+    'in',
+    'of',
+    'toward',
+    'towards',
+    'through',
+    'over',
+    'under',
+    'against',
+    'between',
+    'among',
   };
 
   /// Parse [raw] input and return the best matching [ParsedCommand].
@@ -20,27 +46,34 @@ class ParserService {
     final input = raw.trim().toLowerCase();
 
     if (input.isEmpty) {
-      return ParsedCommand(verb: CommandVerb.unknown, args: const [], rawInput: raw);
+      return ParsedCommand(
+          verb: CommandVerb.unknown, args: const [], rawInput: raw);
     }
 
     // ── Single-word shortcuts ──────────────────────────────────────────────
     if (input == 'i' || input == 'inv' || input == 'inventory') {
-      return ParsedCommand(verb: CommandVerb.inventory, args: const [], rawInput: raw);
+      return ParsedCommand(
+          verb: CommandVerb.inventory, args: const [], rawInput: raw);
     }
     if (input == 'l' || input == 'look') {
-      return ParsedCommand(verb: CommandVerb.examine, args: const [], rawInput: raw);
+      return ParsedCommand(
+          verb: CommandVerb.examine, args: const [], rawInput: raw);
     }
     if (input == 'wait' || input == 'z') {
-      return ParsedCommand(verb: CommandVerb.wait, args: const [], rawInput: raw);
+      return ParsedCommand(
+          verb: CommandVerb.wait, args: const [], rawInput: raw);
     }
     if (input == 'help' || input == '?') {
-      return ParsedCommand(verb: CommandVerb.help, args: const [], rawInput: raw);
+      return ParsedCommand(
+          verb: CommandVerb.help, args: const [], rawInput: raw);
     }
     if (input == 'hint' || input == 'clue' || input == 'nudge') {
-      return ParsedCommand(verb: CommandVerb.hint, args: const [], rawInput: raw);
+      return ParsedCommand(
+          verb: CommandVerb.hint, args: const [], rawInput: raw);
     }
     if (input == 'confirm' || input == 'yes') {
-      return ParsedCommand(verb: CommandVerb.confirm, args: const [], rawInput: raw);
+      return ParsedCommand(
+          verb: CommandVerb.confirm, args: const [], rawInput: raw);
     }
     // Bare direction shortcut
     if (_directions.contains(input)) {
@@ -85,7 +118,8 @@ class ParserService {
       case 'look':
       case 'inspect':
       case 'read':
-        return ParsedCommand(verb: CommandVerb.examine, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.examine, args: rest, rawInput: raw);
 
       case 'take':
       case 'get':
@@ -103,34 +137,41 @@ class ParserService {
         return ParsedCommand(verb: CommandVerb.use, args: rest, rawInput: raw);
 
       case 'deposit':
-        return ParsedCommand(verb: CommandVerb.deposit, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.deposit, args: rest, rawInput: raw);
 
       case 'wait':
         return ParsedCommand(verb: CommandVerb.wait, args: rest, rawInput: raw);
 
       case 'smell':
       case 'sniff':
-        return ParsedCommand(verb: CommandVerb.smell, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.smell, args: rest, rawInput: raw);
 
       case 'taste':
       case 'lick':
-        return ParsedCommand(verb: CommandVerb.taste, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.taste, args: rest, rawInput: raw);
 
       case 'arrange':
       case 'order':
-        return ParsedCommand(verb: CommandVerb.arrange, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.arrange, args: rest, rawInput: raw);
 
       case 'combine':
       case 'merge':
-        return ParsedCommand(verb: CommandVerb.combine, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.combine, args: rest, rawInput: raw);
 
       case 'press':
       case 'push':
-        return ParsedCommand(verb: CommandVerb.press, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.press, args: rest, rawInput: raw);
 
       case 'offer':
       case 'give':
-        return ParsedCommand(verb: CommandVerb.offer, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.offer, args: rest, rawInput: raw);
 
       case 'write':
       case 'inscribe':
@@ -138,37 +179,45 @@ class ParserService {
       case 'paint':
       case 'draw':
       case 'construct':
-        return ParsedCommand(verb: CommandVerb.write, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.write, args: rest, rawInput: raw);
 
       case 'measure':
-        return ParsedCommand(verb: CommandVerb.measure, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.measure, args: rest, rawInput: raw);
 
       case 'calibrate':
-        return ParsedCommand(verb: CommandVerb.calibrate, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.calibrate, args: rest, rawInput: raw);
 
       case 'invert':
       case 'reverse':
-        return ParsedCommand(verb: CommandVerb.invert, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.invert, args: rest, rawInput: raw);
 
       case 'confirm':
       case 'yes':
-        return ParsedCommand(verb: CommandVerb.confirm, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.confirm, args: rest, rawInput: raw);
 
       case 'break':
       case 'shatter':
       case 'smash':
-        return ParsedCommand(verb: CommandVerb.breakObj, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.breakObj, args: rest, rawInput: raw);
 
       case 'blow':
         return ParsedCommand(verb: CommandVerb.blow, args: rest, rawInput: raw);
 
       case 'set':
       case 'adjust':
-        return ParsedCommand(verb: CommandVerb.setParam, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.setParam, args: rest, rawInput: raw);
 
       case 'drink':
       case 'sip':
-        return ParsedCommand(verb: CommandVerb.drink, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.drink, args: rest, rawInput: raw);
 
       case 'stir':
       case 'mix':
@@ -176,19 +225,23 @@ class ParserService {
 
       case 'observe':
       case 'watch':
-        return ParsedCommand(verb: CommandVerb.observe, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.observe, args: rest, rawInput: raw);
 
       case 'enter':
-        return ParsedCommand(verb: CommandVerb.enterValue, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.enterValue, args: rest, rawInput: raw);
 
       case 'collect':
       case 'gather':
-        return ParsedCommand(verb: CommandVerb.collect, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.collect, args: rest, rawInput: raw);
 
       case 'decipher':
       case 'decode':
       case 'translate':
-        return ParsedCommand(verb: CommandVerb.decipher, args: rest, rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.decipher, args: rest, rawInput: raw);
 
       case 'say':
       case 'answer':
@@ -202,10 +255,14 @@ class ParserService {
         return ParsedCommand(verb: CommandVerb.hint, args: rest, rawInput: raw);
 
       case 'help':
-        return ParsedCommand(verb: CommandVerb.help, args: const [], rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.help, args: const [], rawInput: raw);
 
       default:
-        return ParsedCommand(verb: CommandVerb.unknown, args: tokens.skip(1).toList(), rawInput: raw);
+        return ParsedCommand(
+            verb: CommandVerb.unknown,
+            args: tokens.skip(1).toList(),
+            rawInput: raw);
     }
   }
 

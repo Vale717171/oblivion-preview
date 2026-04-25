@@ -963,7 +963,7 @@ def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     sectors = {
-        "giardino":     (GIARDINO_QUOTES,    GIARDINO_OPENINGS,    GIARDINO_CLOSINGS),
+        "garden":     (GIARDINO_QUOTES,    GIARDINO_OPENINGS,    GIARDINO_CLOSINGS),
         "osservatorio": (OSSERVATORIO_QUOTES, OSSERVATORIO_OPENINGS, OSSERVATORIO_CLOSINGS),
         "galleria":     (GALLERIA_QUOTES,     GALLERIA_OPENINGS,    GALLERIA_CLOSINGS),
         "laboratorio":  (LABORATORIO_QUOTES,  LABORATORIO_OPENINGS, LABORATORIO_CLOSINGS),

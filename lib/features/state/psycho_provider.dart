@@ -9,11 +9,11 @@ class PsychoProfile {
   final int oblivionLevel;
   final int anxiety;
   // Phase system (Option A overlay — non-destructive on top of existing sectors)
-  final int phase;           // 1-5: current narrative phase
-  final int awarenessLevel;  // 0-100: grows with exploration and insight
-  final int proustAffinity;  // 0-100: affinity with Proust Echo
+  final int phase; // 1-5: current narrative phase
+  final int awarenessLevel; // 0-100: grows with exploration and insight
+  final int proustAffinity; // 0-100: affinity with Proust Echo
   final int tarkovskijAffinity; // 0-100: affinity with Tarkovskij Echo
-  final int sethAffinity;    // 0-100: affinity with Seth Echo
+  final int sethAffinity; // 0-100: affinity with Seth Echo
 
   PsychoProfile({
     required this.lucidity,

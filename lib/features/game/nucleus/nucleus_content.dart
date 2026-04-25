@@ -6,8 +6,7 @@ class NucleusContent {
     switch (outcome) {
       case FinalOutcomeKey.acceptance:
         return const EngineResponse(
-          narrativeText:
-              '''You do not claim victory.
+          narrativeText: '''You do not claim victory.
 You assent to what is already true.
 
 The Antagonist is silent for a long time.

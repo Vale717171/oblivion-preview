@@ -361,7 +361,7 @@ else:
     → Variante D (Testimone)
 ```
 
-*Nota: la soglia può essere affinata durante il playtest.*
+*Nota: la threshold può essere affinata durante il playtest.*
 
 ### Audio
 

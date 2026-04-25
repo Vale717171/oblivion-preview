@@ -15,8 +15,8 @@ The only slice currently in scope is:
 
 - Splash
 - Home
-- Soglia
-- Giardino
+- Threshold
+- Garden
 - first true Bach reward moment
 
 No other slice may be expanded until this one feels coherent.
@@ -187,10 +187,10 @@ Failure condition:
 
 - if the player feels they are browsing options instead of preparing to descend
 
-## Soglia Contract
+## Threshold Contract
 
-Soglia is not a menu hub.
-Soglia is suspension.
+Threshold is not a menu hub.
+Threshold is suspension.
 
 Required:
 
@@ -205,9 +205,9 @@ When returning after meaningful progress:
 
 Failure condition:
 
-- if Soglia feels like neutral navigation infrastructure
+- if Threshold feels like neutral navigation infrastructure
 
-## Giardino Contract
+## Garden Contract
 
 The Garden must have a readable emotional arc:
 
@@ -235,8 +235,8 @@ Failure condition:
 The slice is only considered successful if all these are true:
 
 - Splash contains no decorative Bach bed
-- Soglia feels distinct from ordinary rooms
-- Giardino does not feel rhythmically flat
+- Threshold feels distinct from ordinary rooms
+- Garden does not feel rhythmically flat
 - Atarassia feels different from a standard reward
 - Bach is scarce enough to be desired
 - the player can sense progression emotionally, not only logically

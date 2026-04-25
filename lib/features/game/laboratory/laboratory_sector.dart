@@ -74,7 +74,7 @@ final SectorContract laboratorySectorContract = SectorContract(
   exitGates: LaboratoryModule.exitGates,
   gateHints: LaboratoryModule.gateHints,
   handlesNode: (nodeId) =>
-      LaboratoryModule.isLaboratoryNode(nodeId) || nodeId == 'la_soglia',
+      LaboratoryModule.isLaboratoryNode(nodeId) || nodeId == 'threshold',
   buildStateView: _buildLaboratoryState,
   handleCommand: _handleLaboratoryCommand,
   onEnterNode: _onEnterLaboratoryNode,

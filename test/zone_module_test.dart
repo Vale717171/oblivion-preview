@@ -93,7 +93,7 @@ void main() {
       expect(evasive.counterUpdates['sys_contradictions'], 3);
       expect(evasive.counterUpdates['zone_meta_quality_tier_0'], 1);
 
-      expect(substantial.response.newNode, 'la_soglia');
+      expect(substantial.response.newNode, 'threshold');
       expect(substantial.response.completePuzzle, 'zone_responded_1');
       expect(substantial.counterUpdates['sys_contradictions'], 1);
       expect(substantial.counterUpdates['zone_meta_quality_tier_2'], 1);
@@ -201,7 +201,7 @@ void main() {
           args: ['east'],
           rawInput: 'go east',
         ),
-        nodeId: 'la_soglia',
+        nodeId: 'threshold',
         evaluationResponse: const EngineResponse(
           narrativeText: 'moving',
           newNode: 'garden_portico',

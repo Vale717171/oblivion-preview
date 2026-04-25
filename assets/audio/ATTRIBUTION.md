@@ -5,25 +5,25 @@ This repository currently ships a fully curated music catalog:
 - all runtime music cues come from explicit `CC0` releases by Kimiko Ishizaka
 - `proustian_trigger` is a local excerpt derived from one of those `CC0` masters
 - three preview ambience beds are repository-generated ffmpeg collages built as
-  concrete world-sound + minimal ambient texture (`ambient_soglia`,
-  `ambient_giardino`, `ambient_osservatorio`)
+  concrete world-sound + minimal ambient texture (`ambient_threshold`,
+  `ambient_garden`, `ambient_osservatorio`)
 - legacy synthesis tooling remains in the repository, but no checked-in runtime
   cue currently depends on it
 
 ## Repository-Generated Ambience
 
-### `ambient_soglia`
+### `ambient_threshold`
 
-- File: `assets/audio/ambient_soglia_air.ogg`
+- File: `assets/audio/ambient_threshold_air.ogg`
 - Type: local ambience collage
 - Construction: hollow air, restrained low resonance, sparse glass
   tintinnabulation
 - Toolchain: `ffmpeg` lavfi generators only
 - License: original repository-generated synthesis, no third-party recording
 
-### `ambient_giardino`
+### `ambient_garden`
 
-- File: `assets/audio/ambient_giardino_water.ogg`
+- File: `assets/audio/ambient_garden_water.ogg`
 - Type: local ambience collage
 - Construction: water bed, sparse droplets, leaf-rustle air, faint bell-like
   glints
@@ -41,9 +41,9 @@ This repository currently ships a fully curated music catalog:
 
 ## Curated External Masters
 
-### `soglia`
+### `threshold`
 
-- File: `assets/audio/bach_bwv846_soglia.ogg`
+- File: `assets/audio/bach_bwv846_threshold.ogg`
 - Work: *The Well-Tempered Clavier*, Book 1, Prelude No. 1 in C major, BWV 846
 - Performer: Kimiko Ishizaka
 - Source pool: Open Well-Tempered Clavier
@@ -52,9 +52,9 @@ This repository currently ships a fully curated music catalog:
 - License: `CC0 1.0 Universal`
 - Reuse basis: the Wikimedia file page explicitly marks the recording as `CC0`
 
-### `giardino`
+### `garden`
 
-- File: `assets/audio/bach_goldberg_giardino.ogg`
+- File: `assets/audio/bach_goldberg_garden.ogg`
 - Work: *Goldberg Variations*, BWV 988, Aria
 - Performer: Kimiko Ishizaka
 - Source pool: Open Goldberg Variations

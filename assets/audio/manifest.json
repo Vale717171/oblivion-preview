@@ -8,16 +8,16 @@
   },
   "tracks": [
     {
-      "key": "ambient_soglia",
-      "asset": "assets/audio/ambient_soglia_air.ogg",
+      "key": "ambient_threshold",
+      "asset": "assets/audio/ambient_threshold_air.ogg",
       "status": "ready",
       "source": "Local ffmpeg-built ambience collage (hollow air, restrained low resonance, sparse glass tintinnabulation)",
       "license": "Repository-generated / lawful original synthesis",
       "duration_s": 180.0
     },
     {
-      "key": "ambient_giardino",
-      "asset": "assets/audio/ambient_giardino_water.ogg",
+      "key": "ambient_garden",
+      "asset": "assets/audio/ambient_garden_water.ogg",
       "status": "ready",
       "source": "Local ffmpeg-built ambience collage (water bed, sparse droplets, leaf-rustle air, faint bell-like glints)",
       "license": "Repository-generated / lawful original synthesis",
@@ -32,16 +32,16 @@
       "duration_s": 180.0
     },
     {
-      "key": "soglia",
-      "asset": "assets/audio/bach_bwv846_soglia.ogg",
+      "key": "threshold",
+      "asset": "assets/audio/bach_bwv846_threshold.ogg",
       "status": "ready",
       "source": "Open Well-Tempered Clavier — Kimiko Ishizaka, Prelude No. 1 in C major, BWV 846",
       "license": "CC0 1.0",
       "duration_s": 162.9
     },
     {
-      "key": "giardino",
-      "asset": "assets/audio/bach_goldberg_giardino.ogg",
+      "key": "garden",
+      "asset": "assets/audio/bach_goldberg_garden.ogg",
       "status": "ready",
       "source": "Open Goldberg Variations — Kimiko Ishizaka, Aria, BWV 988",
       "license": "CC0 1.0",

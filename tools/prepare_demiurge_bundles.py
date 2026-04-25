@@ -9,7 +9,7 @@ Usage:
     python tools/prepare_demiurge_bundles.py [--output-dir assets/texts/demiurge]
 
 Sources (all public domain):
-    - Giardino: Epicurus, Marcus Aurelius, Seneca, Plato, Aristotle
+    - Garden: Epicurus, Marcus Aurelius, Seneca, Plato, Aristotle
     - Osservatorio: Newton, Galileo, Planck, Einstein
     - Galleria: Pacioli, Leonardo, Vasari, Michelangelo
     - Laboratorio: Hermes Trismegistus, Paracelsus, alchemical texts
@@ -50,7 +50,7 @@ except ImportError:
 # ── Sector author mapping ────────────────────────────────────────────────────
 
 SECTOR_AUTHORS: dict[str, list[str]] = {
-    "giardino": [
+    "garden": [
         "Epicurus", "Marcus Aurelius", "Seneca", "Plato", "Aristotle",
         "Epictetus", "Socrates", "Diogenes",
     ],

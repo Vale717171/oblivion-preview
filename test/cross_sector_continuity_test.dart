@@ -26,7 +26,7 @@ void main() {
   group('Cross-sector continuity', () {
     test('obtain one simulacrum, save/load, and continue ritual placement', () {
       final saved = GameState(
-        currentNode: 'la_soglia',
+        currentNode: 'threshold',
         completedPuzzles: const {'garden_complete', 'garden_revisited'},
         puzzleCounters: const {'depth_garden': 7},
         inventory: const ['notebook', 'ataraxia'],
@@ -61,7 +61,7 @@ void main() {
 
     test('revisit hook eligibility survives persistence roundtrip', () {
       final saved = GameState(
-        currentNode: 'la_soglia',
+        currentNode: 'threshold',
         completedPuzzles: const {'obs_complete'},
         puzzleCounters: const {'depth_observatory': 7},
         inventory: const ['notebook', 'the constant'],
@@ -69,7 +69,7 @@ void main() {
       final restored = _fromDbRow(_toDbRow(saved));
 
       final revisit = ObservatoryModule.onEnterNode(
-        fromNode: 'la_soglia',
+        fromNode: 'threshold',
         destNode: 'obs_antechamber',
         state: ObservatoryStateView(
           nodeId: 'obs_antechamber',
@@ -147,7 +147,7 @@ void main() {
           narrativeText: 'x',
           needsDemiurge: true,
         ),
-        nodeId: 'la_soglia',
+        nodeId: 'threshold',
         puzzles: puzzles,
         counters: counters,
       );
