@@ -246,7 +246,7 @@ void main() {
       expect(success!.completePuzzle, 'garden_complete');
       expect(success.grantItem, 'ataraxia');
       expect(success.clearInventoryOnDeposit, isTrue);
-      expect(success.feedbackKind, FeedbackKind.majorRevelation);
+      expect(success.feedbackKind, FeedbackKind.firstBachRevelation);
       expect(success.revealMode, TextRevealMode.wordByWord);
       expect(success.preDisplayPause, const Duration(seconds: 3));
       expect(success.narrativeText, contains('the grove asks nothing of you'));

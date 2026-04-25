@@ -539,6 +539,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
       return response.revealMode;
     }
     if (feedbackKind == FeedbackKind.majorRevelation ||
+        feedbackKind == FeedbackKind.firstBachRevelation ||
         feedbackKind == FeedbackKind.simulacrumFound) {
       return TextRevealMode.wordByWord;
     }
@@ -572,6 +573,7 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
       case FeedbackKind.sectorTransition:
         return const Duration(milliseconds: 500);
       case FeedbackKind.majorRevelation:
+      case FeedbackKind.firstBachRevelation:
         return const Duration(seconds: 2);
       case FeedbackKind.finaleThreshold:
         return const Duration(seconds: 2);
@@ -1020,7 +1022,8 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
                 isDemiurge: response.needsDemiurge,
               ),
             );
-      if (response.audioTrigger == 'simulacrum') {
+      if (response.audioTrigger == 'simulacrum' ||
+          response.audioTrigger == 'first_bach_revelation') {
         // Let the dedicated reward banner land before the typewriter resumes so
         // the simulacrum acquisition reads as a distinct moment of progress.
         await Future.delayed(const Duration(milliseconds: 500));

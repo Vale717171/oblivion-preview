@@ -405,6 +405,10 @@ class AudioService with WidgetsBindingObserver {
         await _playPreviewClosureTrack();
         return;
       }
+      if (trigger == 'first_bach_revelation') {
+        await _crossfadeTo('aria_goldberg');
+        return;
+      }
       if (trigger == 'title_threshold') {
         await _playTitleCueInternal();
         return;

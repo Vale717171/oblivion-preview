@@ -206,10 +206,13 @@ class _GameScreenState extends ConsumerState<GameScreen>
   Timer? _puzzleCueTimer;
   Timer? _simulacrumBannerTimer;
   Timer? _epiphanyPopupTimer;
+  Timer? _firstBachUnlockTimer;
   bool _backgroundFlashActive = false;
   bool _successBloomActive = false;
   bool _briefDimActive = false;
   bool _sectorFadeActive = false;
+  bool _firstBachGlareActive = false;
+  bool _firstBachInputLocked = false;
   bool _puzzleCueActive = false;
   String _puzzleCueTitle = 'Puzzle resolved';
   String _puzzleCueSubtitle = 'A hidden hinge yields.';
@@ -294,6 +297,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     _puzzleCueTimer?.cancel();
     _simulacrumBannerTimer?.cancel();
     _epiphanyPopupTimer?.cancel();
+    _firstBachUnlockTimer?.cancel();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -461,11 +465,31 @@ class _GameScreenState extends ConsumerState<GameScreen>
     if (message.feedbackKind == FeedbackKind.demiurgeError ||
         message.feedbackKind == FeedbackKind.demiurgeInterruption ||
         message.isDemiurge ||
+        message.feedbackKind == FeedbackKind.firstBachRevelation ||
         message.revealMode == TextRevealMode.slow ||
         message.revealMode == TextRevealMode.wordByWord) {
       return TypewriterTextSpeed.slow;
     }
     return TypewriterTextSpeed.normal;
+  }
+
+  void _triggerFirstBachRevelation() {
+    _firstBachUnlockTimer?.cancel();
+    // ignore: discarded_futures
+    AudioService().handleTrigger('first_bach_revelation');
+    if (_hapticsOn()) HapticFeedback.heavyImpact();
+    setState(() {
+      _firstBachInputLocked = true;
+      _firstBachGlareActive = true;
+    });
+    _firstBachUnlockTimer = Timer(const Duration(seconds: 4), () {
+      if (!mounted) return;
+      setState(() {
+        _firstBachInputLocked = false;
+        _firstBachGlareActive = false;
+      });
+      _refocusCommandInput();
+    });
   }
 
   double _oblivionOpacityForMessage({
@@ -841,6 +865,11 @@ class _GameScreenState extends ConsumerState<GameScreen>
     final msgCount = engine.messages.length;
     if (msgCount > _lastObservedMessageCount) {
       final lastMsg = engine.messages.lastOrNull;
+      if (lastMsg?.feedbackKind == FeedbackKind.firstBachRevelation) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _triggerFirstBachRevelation();
+        });
+      }
       final rejected = lastMsg?.role == MessageRole.error ||
           lastMsg?.feedbackKind == FeedbackKind.demiurgeError;
       if (rejected) {
@@ -934,6 +963,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
   void _submit() {
     try {
+      if (_firstBachInputLocked) return;
       final text = _controller.text.trim();
       if (_typewriterRunning) {
         _skipTypewriter();
@@ -1123,6 +1153,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
             nodeId: currentNode,
             highContrast: highContrast,
           );
+    final effectiveBgColor =
+        _firstBachGlareActive ? const Color(0xFFF7F0D6) : bgColor;
+    final effectiveNarrativeColor =
+        _firstBachGlareActive ? const Color(0xFF11151D) : narrativeColor;
     final visualProfile = visualProfileForNode(currentNode);
 
     // Resolve background image from current node
@@ -1138,7 +1172,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     _consumeOblivionHaptic(profile?.oblivionLevel ?? 0);
 
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: effectiveBgColor,
       body: SafeArea(
         child: Stack(
           children: [
@@ -1164,6 +1198,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
                 profile: visualProfile,
                 reduceMotion: settings?.reduceMotion ?? false,
               ),
+            ),
+            _FirstBachGlareLayer(
+              active: _firstBachGlareActive,
+              reduceMotion: settings?.reduceMotion ?? false,
             ),
             // Vignette: radial gradient that darkens toward the edges.
             // Intensity scales with oblivionLevel (0→100) so the world
@@ -1253,7 +1291,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                       child: _TopHud(
                         sectorLabel: gameSectorLabel(currentNode),
                         nodeTitle: gameNodeTitle(currentNode),
-                        narrativeColor: narrativeColor,
+                        narrativeColor: effectiveNarrativeColor,
                         visualProfile: visualProfile,
                         textScale: textScale,
                         onMenuSelected: (action) =>
@@ -1269,7 +1307,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                           nodeTitle: gameNodeTitle(currentNode),
                           itemCount: engine.inventory.length,
                           weight: engine.psychoWeight,
-                          narrativeColor: narrativeColor,
+                          narrativeColor: effectiveNarrativeColor,
                           visualProfile: visualProfile,
                           textScale: textScale,
                           showAssist: showSessionAssist,
@@ -1323,7 +1361,9 @@ class _GameScreenState extends ConsumerState<GameScreen>
                                     child: _MessageTile(
                                       text: msg.text,
                                       role: msg.role,
-                                      narrativeColor: narrativeColor,
+                                      narrativeColor: effectiveNarrativeColor,
+                                      forceSerif: msg.feedbackKind ==
+                                          FeedbackKind.firstBachRevelation,
                                       visualProfile: visualProfile,
                                       showCursor:
                                           isLastNarrative && _typewriterRunning,
@@ -1363,7 +1403,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                       itemCount: engine.inventory.length,
                       completedPuzzles: engine.completedPuzzles,
                       profile: profile,
-                      color: narrativeColor.withValues(alpha: 0.72),
+                      color: effectiveNarrativeColor.withValues(alpha: 0.72),
                       visualProfile: visualProfile,
                       textScale: textScale,
                       lastCommand: _lastSubmittedCommand,
@@ -1381,8 +1421,9 @@ class _GameScreenState extends ConsumerState<GameScreen>
                             _startGameplayAudioFromInput();
                           }
                         },
-                        enabled: engine.phase == ParserPhase.idle,
-                        narrativeColor: narrativeColor,
+                        enabled: engine.phase == ParserPhase.idle &&
+                            !_firstBachInputLocked,
+                        narrativeColor: effectiveNarrativeColor,
                         visualProfile: visualProfile,
                         textScale: textScale,
                         hintText: _inputHintForNode(currentNode),
@@ -1485,6 +1526,44 @@ class _BackgroundLayer extends StatelessWidget {
         duration: flashActive ? Duration.zero : _backgroundFadeDuration,
         curve: Curves.easeOut,
         child: child,
+      ),
+    );
+  }
+}
+
+class _FirstBachGlareLayer extends StatelessWidget {
+  final bool active;
+  final bool reduceMotion;
+
+  const _FirstBachGlareLayer({
+    required this.active,
+    required this.reduceMotion,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedOpacity(
+          opacity: active ? 1 : 0,
+          duration:
+              reduceMotion ? Duration.zero : const Duration(milliseconds: 360),
+          curve: Curves.easeOutCubic,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: const Alignment(0, -0.18),
+                radius: 1.05,
+                colors: [
+                  const Color(0xFFFFF9E8).withValues(alpha: 0.78),
+                  const Color(0xFFF3D88E).withValues(alpha: 0.42),
+                  const Color(0xFF05070D).withValues(alpha: 0.12),
+                ],
+                stops: const [0.0, 0.48, 1.0],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1858,6 +1937,7 @@ class _MessageTile extends StatelessWidget {
   final double textScale;
   final TypewriterTextSpeed typewriterSpeed;
   final bool revealAll;
+  final bool forceSerif;
   final VoidCallback? onRevealComplete;
 
   const _MessageTile({
@@ -1869,6 +1949,7 @@ class _MessageTile extends StatelessWidget {
     required this.textScale,
     this.typewriterSpeed = TypewriterTextSpeed.instant,
     this.revealAll = true,
+    this.forceSerif = false,
     this.onRevealComplete,
   });
 
@@ -1917,6 +1998,10 @@ class _MessageTile extends StatelessWidget {
             style: RitualTypography.narrative(
               17 * textScale,
               color: narrativeColor,
+            ).copyWith(
+              fontFamily: forceSerif ? 'Georgia' : null,
+              fontFamilyFallback:
+                  forceSerif ? const ['Times New Roman', 'serif'] : null,
             ),
           ),
         );

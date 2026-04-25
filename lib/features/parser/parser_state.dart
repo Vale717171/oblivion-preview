@@ -33,6 +33,7 @@ enum FeedbackKind {
   simulacrumFound,
   sectorTransition,
   majorRevelation,
+  firstBachRevelation,
   finaleThreshold,
   demiurgeInterruption,
   demiurgeError,
