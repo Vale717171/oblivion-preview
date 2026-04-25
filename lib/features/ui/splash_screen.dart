@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/app_logger.dart';
 import '../audio/audio_service.dart';
 import '../settings/app_settings_provider.dart';
 import 'game_screen.dart';
@@ -38,7 +39,7 @@ class _SplashScreenWidgetState extends ConsumerState<SplashScreenWidget> {
       HapticFeedback.mediumImpact();
     }
 
-    await AudioService().enterArchiveAt('intro_void');
+    await _enterArchiveAudioWithRetry();
 
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
@@ -52,6 +53,24 @@ class _SplashScreenWidgetState extends ConsumerState<SplashScreenWidget> {
             FadeTransition(opacity: animation, child: child),
       ),
     );
+  }
+
+  Future<void> _enterArchiveAudioWithRetry() async {
+    for (var attempt = 1; attempt <= 2; attempt++) {
+      try {
+        await AudioService().enterArchiveAt('intro_void');
+        return;
+      } catch (e, stack) {
+        AppLogger.log(
+          'Archive',
+          'Audio unlock attempt $attempt failed: $e',
+          stack,
+        );
+        if (attempt == 1) {
+          await Future<void>.delayed(const Duration(milliseconds: 180));
+        }
+      }
+    }
   }
 
   @override

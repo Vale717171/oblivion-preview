@@ -10,6 +10,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:archive_of_oblivion/features/game/game_engine_provider.dart';
+import 'package:archive_of_oblivion/features/game/laboratory/laboratory_module.dart';
 
 void main() {
   // ── Known gate entries ────────────────────────────────────────────────────────
@@ -159,17 +160,43 @@ void main() {
     }
   });
 
-  // ── 7. Special-case gates documented (not directly testable without engine) ───
+  // ── 7. Special multi-condition gates ────────────────────────────────────────
   //
-  // The following gates are handled as special cases BEFORE the _exitGates map
-  // is consulted (game_engine_provider.dart lines ~1665-1709) and therefore
-  // cannot be verified with the static helpers alone.  They are listed here as
-  // documentation and are marked as pending/skip.
+  // The lab_substances branch gates all depend on the derived marker
+  // lab_substances_ready. This marker must only appear once all three Tria
+  // Prima substances have been collected.
 
-  group('special multi-condition gates (pending engine integration tests)', () {
-    test('lab_substances → non-north requires all three substance offerings',
-        () {
-      // substance_body + substance_time + substance_idea
-    }, skip: 'requires engine; tracked as integration-test TODO');
+  group('special multi-condition gates', () {
+    test('lab_substances branches require all three substances', () {
+      expect(
+        LaboratoryModule.completionMarkers(
+          puzzles: const {
+            'lab_mercury_collected',
+            'lab_sulphur_collected',
+          },
+          counters: const {},
+        ),
+        isNot(contains('lab_substances_ready')),
+      );
+
+      expect(
+        LaboratoryModule.completionMarkers(
+          puzzles: const {
+            'lab_mercury_collected',
+            'lab_sulphur_collected',
+            'lab_salt_collected',
+          },
+          counters: const {},
+        ),
+        contains('lab_substances_ready'),
+      );
+
+      for (final direction in const ['west', 'south', 'east']) {
+        expect(
+          gameRequiredPuzzleForExit('lab_substances', direction),
+          'lab_substances_ready',
+        );
+      }
+    });
   });
 }

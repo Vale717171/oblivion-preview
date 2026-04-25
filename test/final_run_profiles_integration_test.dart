@@ -76,10 +76,10 @@ void main() {
   };
 
   final profiles = <_RunProfile>[
-    _RunProfile(
+    const _RunProfile(
       name: 'acceptance_oriented',
       puzzles: baselinePuzzles,
-      counters: const {
+      counters: {
         'quote_exposure_seen': 24,
         'sys_notebook_habitation': 11,
         'sys_contradictions': 1,
@@ -94,14 +94,14 @@ void main() {
         'zone_meta_contradiction_resolved_count': 2,
         'zone_meta_contradiction_intensified_count': 0,
       },
-      inventory: const ['notebook', 'ataraxia', 'the constant'],
+      inventory: ['notebook', 'ataraxia', 'the constant'],
       psychoWeight: 1,
       nucleusInput: 'imperfection and human warmth',
       expectedEndingNode: 'finale_acceptance',
       expectedZoneSource: 'weight_verbal',
       expectMemoryReady: true,
     ),
-    _RunProfile(
+    const _RunProfile(
       name: 'oblivion_oriented',
       puzzles: {
         'garden_complete',
@@ -114,7 +114,7 @@ void main() {
         'sys_deep_gallery',
         'sys_deep_laboratory',
       },
-      counters: const {
+      counters: {
         'quote_exposure_seen': 23,
         'sys_notebook_habitation': 6,
         'sys_contradictions': 6,
@@ -126,17 +126,17 @@ void main() {
         'zone_meta_contradiction_resolved_count': 0,
         'zone_meta_contradiction_intensified_count': 3,
       },
-      inventory: const ['notebook', 'mirror shard', 'clock', 'ticket'],
+      inventory: ['notebook', 'mirror shard', 'clock', 'ticket'],
       psychoWeight: 8,
       nucleusInput: 'i accept oblivion',
       expectedEndingNode: 'finale_oblivion',
       expectedZoneSource: 'contradiction',
       expectMemoryReady: false,
     ),
-    _RunProfile(
+    const _RunProfile(
       name: 'eternal_zone_oriented',
       puzzles: baselinePuzzles,
-      counters: const {
+      counters: {
         'quote_exposure_seen': 22,
         'sys_notebook_habitation': 10,
         'sys_contradictions': 4,
@@ -151,17 +151,17 @@ void main() {
         'zone_meta_contradiction_resolved_count': 1,
         'zone_meta_contradiction_intensified_count': 1,
       },
-      inventory: const ['notebook', 'the proportion', 'ticket'],
+      inventory: ['notebook', 'the proportion', 'ticket'],
       psychoWeight: 2,
       nucleusInput: 'i want to stay',
       expectedEndingNode: 'finale_eternal_zone',
       expectedZoneSource: 'contradiction',
       expectMemoryReady: true,
     ),
-    _RunProfile(
+    const _RunProfile(
       name: 'testimony_oriented',
       puzzles: baselinePuzzles,
-      counters: const {
+      counters: {
         'quote_exposure_seen': 30,
         'sys_notebook_habitation': 14,
         'sys_contradictions': 1,
@@ -177,17 +177,17 @@ void main() {
         'zone_meta_contradiction_resolved_count': 3,
         'zone_meta_contradiction_intensified_count': 0,
       },
-      inventory: const ['notebook', 'ataraxia', 'the proportion'],
+      inventory: ['notebook', 'ataraxia', 'the proportion'],
       psychoWeight: 1,
       nucleusInput: 'i bear witness',
       expectedEndingNode: 'finale_testimony',
       expectedZoneSource: 'weight_verbal',
       expectMemoryReady: true,
     ),
-    _RunProfile(
+    const _RunProfile(
       name: 'contradictory_under_integrated',
-      puzzles: const {'garden_complete', 'ritual_complete'},
-      counters: const {
+      puzzles: {'garden_complete', 'ritual_complete'},
+      counters: {
         'quote_exposure_seen': 8,
         'sys_notebook_habitation': 3,
         'sys_contradictions': 5,
@@ -197,17 +197,17 @@ void main() {
         'zone_meta_contradiction_resolved_count': 0,
         'zone_meta_contradiction_intensified_count': 2,
       },
-      inventory: const ['notebook', 'mirror shard'],
+      inventory: ['notebook', 'mirror shard'],
       psychoWeight: 6,
       nucleusInput: 'acceptance',
       expectedEndingNode: null,
       expectedZoneSource: 'contradiction',
       expectMemoryReady: false,
     ),
-    _RunProfile(
+    const _RunProfile(
       name: 'advanced_but_evasive',
       puzzles: baselinePuzzles,
-      counters: const {
+      counters: {
         'quote_exposure_seen': 24,
         'sys_notebook_habitation': 9,
         'sys_contradictions': 2,
@@ -222,7 +222,7 @@ void main() {
         'zone_meta_contradiction_resolved_count': 0,
         'zone_meta_contradiction_intensified_count': 3,
       },
-      inventory: const ['notebook', 'ticket'],
+      inventory: ['notebook', 'ticket'],
       psychoWeight: 3,
       nucleusInput: 'human warmth and acceptance',
       expectedEndingNode: null,

@@ -44,14 +44,7 @@ void main() async {
 
   // Initialize audio and the browser playback session.
   final audioService = AudioService();
-  bool audioFailed = false;
-  try {
-    await audioService.initialize(container);
-  } catch (e) {
-    // Audio failure must not prevent the game from starting (GDD: text-only is valid)
-    audioFailed = true;
-    AppLogger.log('Archive', 'AudioService init failed: $e');
-  }
+  final audioFailed = !await _initializeAudioWithRetry(audioService, container);
 
   // Pre-load Demiurge citation bundles (deterministic narrator — GDD §5).
   try {
@@ -71,6 +64,29 @@ void main() async {
       child: MyApp(audioFailed: audioFailed),
     ),
   );
+}
+
+Future<bool> _initializeAudioWithRetry(
+  AudioService audioService,
+  ProviderContainer container,
+) async {
+  for (var attempt = 1; attempt <= 2; attempt++) {
+    try {
+      await audioService.initialize(container);
+      return true;
+    } catch (e, stack) {
+      AppLogger.log(
+        'Archive',
+        'AudioService init attempt $attempt failed: $e',
+        stack,
+      );
+      if (attempt == 1) {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+    }
+  }
+  // Audio failure must not prevent the game from starting (GDD: text-only is valid).
+  return false;
 }
 
 class MyApp extends StatelessWidget {

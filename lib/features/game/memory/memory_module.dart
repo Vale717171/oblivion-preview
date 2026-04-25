@@ -529,7 +529,7 @@ class MemoryModule {
 
     final mode =
         chamber == 'childhood' ? _AnswerMode.singleWord : _AnswerMode.narrative;
-    final evaluation = evaluateAnswer(cleaned, mode: mode);
+    final evaluation = _evaluateAnswer(cleaned, mode: mode);
     final tags = _tagsForMemoryAnswer(chamber: chamber, text: cleaned);
     final contradictionReference = _mentionsContradiction(cleaned);
     final qualityTier = !evaluation.accepted
@@ -924,7 +924,7 @@ class MemoryModule {
     }
 
     final text = cmd.args.join(' ').trim();
-    final evaluation = evaluateAnswer(text, mode: mode);
+    final evaluation = _evaluateAnswer(text, mode: mode);
     if (!evaluation.accepted) {
       return EngineResponse(
         narrativeText: evaluation.rejection ??
@@ -955,7 +955,7 @@ class MemoryModule {
     );
   }
 
-  static AnswerEvaluation evaluateAnswer(
+  static AnswerEvaluation _evaluateAnswer(
     String input, {
     required _AnswerMode mode,
   }) {

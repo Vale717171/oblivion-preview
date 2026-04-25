@@ -355,14 +355,14 @@ class ObservatoryModule {
     final puzzle = 'obs_lens_${lens}_taken';
     if (state.completedPuzzles.contains(puzzle)) {
       return EngineResponse(
-        narrativeText: 'You already carry the ${lens} lens.',
+        narrativeText: 'You already carry the $lens lens.',
       );
     }
     return EngineResponse(
-      narrativeText: 'You lift the ${lens} lens from its cradle.\n\n'
+      narrativeText: 'You lift the $lens lens from its cradle.\n\n'
           'Its weight is less physical than interpretive.',
       needsDemiurge: true,
-      grantItem: '${lens} lens',
+      grantItem: '$lens lens',
       weightDelta: 1,
       completePuzzle: puzzle,
     );

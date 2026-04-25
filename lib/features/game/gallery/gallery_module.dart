@@ -603,7 +603,7 @@ class GalleryModule {
         final count =
             (state.puzzleCounters['gallery_mirror_seduction'] ?? 0) + 1;
         if (count < 2) {
-          return EngineResponse(
+          return const EngineResponse(
             narrativeText: 'The reflection steadies, then slips.\n\n'
                 'Not yet. Stay with it one turn longer.',
             incrementCounter: 'gallery_mirror_seduction',

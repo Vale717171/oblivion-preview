@@ -615,8 +615,9 @@ class ZoneModule {
     );
 
     if (contradictions >= 3) probability += 0.08;
-    if (memoryInput.costlyAnswers < 1 && simulacraCount >= 2)
+    if (memoryInput.costlyAnswers < 1 && simulacraCount >= 2) {
       probability += 0.05;
+    }
     if (habitation < 5) probability += 0.03;
 
     final pressure = counters['sys_zone_pressure'] ?? 0;
@@ -659,8 +660,9 @@ class ZoneModule {
     if (fromNode == 'gallery_central' && puzzles.contains('gallery_complete')) {
       return true;
     }
-    if (fromNode == 'lab_sealed' && puzzles.contains('lab_complete'))
+    if (fromNode == 'lab_sealed' && puzzles.contains('lab_complete')) {
       return true;
+    }
     if (fromNode == 'quinto_ritual_chamber' &&
         puzzles.contains('ritual_complete')) {
       return true;

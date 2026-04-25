@@ -9,10 +9,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _RecordingGameEngineNotifier extends GameEngineNotifier {
-  _RecordingGameEngineNotifier(this.commands, {this.initialMessages});
+  _RecordingGameEngineNotifier(this.commands);
 
   final List<String> commands;
-  final List<GameMessage>? initialMessages;
 
   @override
   Future<GameEngineState> build() async {
@@ -21,13 +20,12 @@ class _RecordingGameEngineNotifier extends GameEngineNotifier {
       phase: ParserPhase.idle,
       inventory: ['notebook'],
     ).copyWith(
-      messages: initialMessages ??
-          const [
-            GameMessage(
-              text: 'Silence. Then awareness. A path forms ahead.',
-              role: MessageRole.narrative,
-            ),
-          ],
+      messages: const [
+        GameMessage(
+          text: 'Silence. Then awareness. A path forms ahead.',
+          role: MessageRole.narrative,
+        ),
+      ],
     );
   }
 

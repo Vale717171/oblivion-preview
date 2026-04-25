@@ -129,11 +129,13 @@ String _sectorForNode(String nodeId) {
   if (nodeId == 'intro_void' || nodeId == 'threshold') return 'Threshold';
   if (nodeId.startsWith('garden')) return 'Garden';
   if (nodeId.startsWith('obs_')) return 'Observatory';
-  if (nodeId.startsWith('gal_') || nodeId.startsWith('gallery_'))
+  if (nodeId.startsWith('gal_') || nodeId.startsWith('gallery_')) {
     return 'Gallery';
+  }
   if (nodeId.startsWith('lab_')) return 'Laboratory';
-  if (nodeId.startsWith('quinto_') || nodeId.startsWith('memory_'))
+  if (nodeId.startsWith('quinto_') || nodeId.startsWith('memory_')) {
     return 'Memory';
+  }
   if (nodeId.startsWith('finale_') || nodeId == 'il_nucleo') return 'Finale';
   if (nodeId == 'la_zona') return 'Zone';
   return 'Archive';
