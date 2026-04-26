@@ -727,13 +727,13 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
           cmd.args.isNotEmpty &&
           currentNodeId != 'lab_great_work' &&
           currentNodeId != 'quinto_ritual_chamber') {
-        newInventory.remove(cmd.args.join(' '));
+        newInventory = _inventoryAfterDropCommand(cmd, newInventory);
       }
-      // deposit clears mundane items only when the deposit actually succeeds.
-      // Failed deposits (wrong node, alcoves not walked, etc.) must NOT clear
-      // inventory — the player would lose all items with no benefit.
+      // Final relinquishment clears mundane items only when the sector response
+      // explicitly marks a successful deposit/offering. Failed attempts must
+      // NOT clear inventory — the player would lose items with no benefit.
       // In boss context (il_nucleo): preserve simulacra — only remove mundane items.
-      if (cmd.verb == CommandVerb.deposit && response.clearInventoryOnDeposit) {
+      if (response.clearInventoryOnDeposit) {
         if (currentNodeId == 'il_nucleo') {
           newInventory = newInventory
               .where((item) => _isSimulacrum(item) || item == 'notebook')
@@ -1428,9 +1428,24 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
     }
     final target = cmd.args.join(' ');
 
-    final match = s.inventory
-        .where((i) => i.contains(target) || target.contains(i))
-        .firstOrNull;
+    if (_isDropAllTarget(target)) {
+      final dropped = s.inventory
+          .where((item) => item != 'notebook' && !_isSimulacrum(item))
+          .toList();
+      if (dropped.isEmpty) {
+        return const EngineResponse(
+          narrativeText: 'You carry nothing here that can be set down.',
+        );
+      }
+      return EngineResponse(
+        narrativeText: 'You set down ${_joinReadableList(dropped)}.\n\n'
+            'For a moment your hands remember being empty.',
+        weightDelta: -dropped.length,
+        anxietyDelta: -dropped.length,
+      );
+    }
+
+    final match = _dropMatchForTarget(target, s.inventory);
     if (match == null) {
       return const EngineResponse(narrativeText: 'You are not carrying that.');
     }
@@ -1449,6 +1464,44 @@ class GameEngineNotifier extends AsyncNotifier<GameEngineState> {
       weightDelta: isSimulacrum ? 0 : -1,
       anxietyDelta: isSimulacrum ? 0 : -1,
     );
+  }
+
+  bool _isDropAllTarget(String target) {
+    final normalized = target.trim().toLowerCase();
+    return normalized == 'all' ||
+        normalized == 'everything' ||
+        normalized == 'all things' ||
+        normalized == 'objects' ||
+        normalized == 'items';
+  }
+
+  String? _dropMatchForTarget(String target, Iterable<String> inventory) {
+    final normalized = target.trim().toLowerCase();
+    return inventory
+        .where((item) => item.contains(normalized) || normalized.contains(item))
+        .firstOrNull;
+  }
+
+  List<String> _inventoryAfterDropCommand(
+    ParsedCommand cmd,
+    List<String> inventory,
+  ) {
+    final target = cmd.args.join(' ');
+    if (_isDropAllTarget(target)) {
+      return inventory
+          .where((item) => item == 'notebook' || _isSimulacrum(item))
+          .toList();
+    }
+    final match = _dropMatchForTarget(target, inventory);
+    if (match == null || match == 'notebook') return inventory;
+    return inventory.where((item) => item != match).toList();
+  }
+
+  String _joinReadableList(List<String> items) {
+    if (items.length == 1) return 'the ${items.single}';
+    if (items.length == 2) return 'the ${items[0]} and the ${items[1]}';
+    return 'the ${items.take(items.length - 1).join(', ')}, and '
+        'the ${items.last}';
   }
 
   EngineResponse _handleDeposit(String nodeId, GameEngineState s) {
