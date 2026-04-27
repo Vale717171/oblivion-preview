@@ -52,3 +52,4 @@ assets/llm/*.bin
 
 # Sensitive config
 assets/config/secrets.json
+game.zip
