@@ -175,10 +175,6 @@ const List<double> _backgroundImageBrightnessMatrix = [
   0,
 ];
 
-final FocusNode gameCommandFocusNode = FocusNode(
-  debugLabel: 'game-command-input',
-);
-
 enum TypewriterTextSpeed { slow, weighted, normal, instant }
 
 class GameScreen extends ConsumerStatefulWidget {
@@ -192,7 +188,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     with WidgetsBindingObserver {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
-  final _focusNode = gameCommandFocusNode;
+  late final FocusNode _focusNode;
 
   // Typewriter state for the last narrative message.
   bool _typewriterRunning = false;
@@ -262,6 +258,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode(debugLabel: 'game-command-input');
     WidgetsBinding.instance.addObserver(this);
     _focusNode.onKeyEvent = (_, event) {
       if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
@@ -280,7 +277,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
     // Request input focus after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _focusNode.requestFocus();
       final currentNode =
           ref.read(gameStateProvider).valueOrNull?.currentNode ?? 'intro_void';
       AudioService().syncForNode(currentNode, force: true);
@@ -303,6 +299,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     _epiphanyPopupTimer?.cancel();
     _firstBachUnlockTimer?.cancel();
     _controller.dispose();
+    _focusNode.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -1012,7 +1009,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _focusNode.requestFocus();
-      SystemChannels.textInput.invokeMethod('TextInput.show');
+      // Removed SystemChannels.textInput.show to prevent mobile web glitches
     });
   }
 
@@ -1220,8 +1217,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
     final highContrast = settings?.highContrast ?? false;
     final currentNode = gameStateAsync.valueOrNull?.currentNode ?? 'intro_void';
 
-    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
-
     final bgColor = _backgroundColor(profile);
     final narrativeColor = highContrast
         ? const Color(0xFFF6F2E8)
@@ -1235,6 +1230,14 @@ class _GameScreenState extends ConsumerState<GameScreen>
     final effectiveNarrativeColor =
         _firstBachGlareActive ? const Color(0xFF11151D) : narrativeColor;
     final visualProfile = visualProfileForNode(currentNode);
+
+
+    // Calculate compact mode for landscape / small screens
+    final mediaQuery = MediaQuery.of(context);
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+    final keyboardOpen = mediaQuery.viewInsets.bottom > 0;
+    final availableHeight = mediaQuery.size.height - mediaQuery.viewInsets.bottom;
+    final isCompact = (isLandscape && keyboardOpen) || (availableHeight < 340);
 
     // Resolve background image from current node
     final backgroundPath = BackgroundService.getBackgroundForNodeOrDefault(
@@ -1250,8 +1253,13 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
     return Scaffold(
       backgroundColor: effectiveBgColor,
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: Stack(
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: Stack(
           children: [
             _BackgroundLayer(
               backgroundPath: backgroundPath,
@@ -1362,7 +1370,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
                 return Column(
                   children: [
-                    Padding(
+                    if (!isCompact)
+                      Padding(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                       child: _TopHud(
                         sectorLabel: gameSectorLabel(currentNode),
@@ -1375,7 +1384,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                         canReturnToTitle: Navigator.of(context).canPop(),
                       ),
                     ),
-                    if (!keyboardOpen && !isFinale)
+                    if (!keyboardOpen && !isFinale && !isCompact)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                         child: _SessionCard(
@@ -1478,7 +1487,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
                     ),
 
                     // ── Status bar ───────────────────────────────────────────
-                    _StatusBar(
+                    if (!isCompact)
+                      _StatusBar(
                       weight: engine.psychoWeight,
                       itemCount: engine.inventory.length,
                       completedPuzzles: engine.completedPuzzles,
@@ -1562,6 +1572,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -3161,7 +3172,7 @@ class _InputRow extends StatelessWidget {
                         controller: controller,
                         focusNode: focusNode,
                         enabled: enabled,
-                        autofocus: true,
+                        autofocus: false, // Removed aggressive autofocus for mobile web
                         textInputAction: TextInputAction.send,
                         onChanged: onTextChanged,
                         onSubmitted: (_) => onSubmit(),
