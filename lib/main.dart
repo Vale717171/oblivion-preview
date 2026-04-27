@@ -10,16 +10,20 @@ import 'features/audio/audio_service.dart';
 import 'features/demiurge/demiurge_service.dart';
 import 'features/ui/splash_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (kIsWeb) {
-    databaseFactory = databaseFactoryFfiWeb;
-  } else if (defaultTargetPlatform == TargetPlatform.macOS ||
-      defaultTargetPlatform == TargetPlatform.windows ||
-      defaultTargetPlatform == TargetPlatform.linux) {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
+  try {
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    } else if (defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
+  } catch (e, stack) {
+    AppLogger.log('Bootstrap', 'Database initialization failed: $e', stack);
   }
 
   // Global error handlers: keep unhandled exceptions visible in debug logs.
@@ -39,31 +43,43 @@ void main() async {
   GoogleFonts.config.allowRuntimeFetching = kIsWeb;
 
   // ProviderContainer necessario per inizializzare AudioService
-  // prima di runApp (audio_service usa container.listen, non WidgetRef)
+  // (audio_service usa container.listen, non WidgetRef)
   final container = ProviderContainer();
 
-  // Initialize audio and the browser playback session.
-  final audioService = AudioService();
-  final audioFailed = !await _initializeAudioWithRetry(audioService, container);
-
-  // Pre-load Demiurge citation bundles (deterministic narrator — GDD §5).
-  try {
-    if (kIsPreviewBuild) {
-      await DemiurgeService.instance.loadPreviewBundles();
-    } else {
-      await DemiurgeService.instance.loadAll();
-    }
-  } catch (e) {
-    // Bundle failure must not prevent the game from starting; fallback text is used.
-    AppLogger.log('Archive', 'DemiurgeService preload failed: $e');
-  }
+  // Defer potentially blocking initialization tasks (like Audio and Demiurge)
+  // until after runApp so the first frame is unblocked and the loading spinner disappears.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _deferredInitialization(container);
+  });
 
   runApp(
     UncontrolledProviderScope(
       container: container,
-      child: MyApp(audioFailed: audioFailed),
+      child: const MyApp(audioFailed: false),
     ),
   );
+}
+
+Future<void> _deferredInitialization(ProviderContainer container) async {
+  // Initialize audio and the browser playback session.
+  final audioService = AudioService();
+  final audioFailed = !await _initializeAudioWithRetry(audioService, container);
+
+  if (audioFailed) {
+    AppLogger.log('Archive', 'AudioService deferred initialization failed.');
+  }
+
+  // Pre-load Demiurge citation bundles (deterministic narrator — GDD §5).
+  try {
+    Future<void> loadBundles = kIsPreviewBuild
+        ? DemiurgeService.instance.loadPreviewBundles()
+        : DemiurgeService.instance.loadAll();
+
+    await loadBundles.timeout(const Duration(seconds: 4));
+  } catch (e) {
+    // Bundle failure must not prevent the game from starting; fallback text is used.
+    AppLogger.log('Archive', 'DemiurgeService preload failed or timed out: $e');
+  }
 }
 
 Future<bool> _initializeAudioWithRetry(
@@ -72,12 +88,12 @@ Future<bool> _initializeAudioWithRetry(
 ) async {
   for (var attempt = 1; attempt <= 2; attempt++) {
     try {
-      await audioService.initialize(container);
+      await audioService.initialize(container).timeout(const Duration(seconds: 4));
       return true;
     } catch (e, stack) {
       AppLogger.log(
         'Archive',
-        'AudioService init attempt $attempt failed: $e',
+        'AudioService init attempt $attempt failed or timed out: $e',
         stack,
       );
       if (attempt == 1) {
