@@ -14,7 +14,7 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
-  <base href="$FLUTTER_BASE_HREF">
+  <base href="./">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
@@ -78,10 +78,21 @@
 
   <div id="archive-flutter-loader" aria-live="polite" aria-busy="true">
     <div class="archive-loader-text">The Archive is materializing...</div>
+    <div id="archive-loader-fallback" style="opacity: 0; font-size: 0.85rem; color: #888; margin-top: 16px; transition: opacity 0.5s;">
+      Still loading. If this persists, the web build may not have loaded correctly.
+    </div>
   </div>
 
   <script>
+    var fallbackTimeout = setTimeout(function() {
+      var fallback = document.getElementById('archive-loader-fallback');
+      if (fallback) {
+        fallback.style.opacity = '1';
+      }
+    }, 12000); // Show fallback after 12 seconds
+
     window.addEventListener('flutter-first-frame', function removeArchiveLoader() {
+      clearTimeout(fallbackTimeout);
       var loader = document.getElementById('archive-flutter-loader');
       if (!loader) return;
       loader.classList.add('archive-loader-exit');

@@ -20,13 +20,17 @@ flutter pub get
 flutter run -d chrome
 ```
 
-For the distributable preview:
+For the distributable preview (Itch.io web build):
 
 ```bash
-flutter build web
+flutter clean
+flutter pub get
+flutter build web --release
+cd build/web
+zip -r ../../oblivion-preview-itch.zip . -x "*.DS_Store"
 ```
 
-The generated files in `build/web/` are the artifact to upload to Itch.io.
+> **Note:** The zip archive for Itch.io must be created from *inside* the `build/web/` directory so that `index.html`, `flutter_bootstrap.js`, `main.dart.js`, `assets/`, etc., sit directly at the root of the archive, rather than nested in a `build/web/` folder.
 
 ## Project Shape
 
