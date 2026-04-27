@@ -277,7 +277,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
     // Request input focus after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _focusNode.requestFocus();
       final currentNode =
           ref.read(gameStateProvider).valueOrNull?.currentNode ?? 'intro_void';
       AudioService().syncForNode(currentNode, force: true);
@@ -1238,7 +1237,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     final isLandscape = mediaQuery.orientation == Orientation.landscape;
     final keyboardOpen = mediaQuery.viewInsets.bottom > 0;
     final availableHeight = mediaQuery.size.height - mediaQuery.viewInsets.bottom;
-    final isCompact = (isLandscape && keyboardOpen) || (availableHeight < 250);
+    final isCompact = (isLandscape && keyboardOpen) || (availableHeight < 340);
 
     // Resolve background image from current node
     final backgroundPath = BackgroundService.getBackgroundForNodeOrDefault(
